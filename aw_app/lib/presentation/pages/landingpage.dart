@@ -19,7 +19,7 @@ class Landingpage extends StatelessWidget {
           : TextDirection.ltr,
       child: Scaffold(
         appBar: AppBar(
-          foregroundColor: AppColors.colorLight,
+          foregroundColor: AWColors.colorLight,
           title: Text(Translate.get('LandTitle', lang: currentLang)),
           centerTitle: true,
           leading: const Icon(Icons.person_3_outlined),
@@ -38,12 +38,12 @@ class Landingpage extends StatelessWidget {
               ),
             ),
           ],
-          backgroundColor: AppColors.primary,
+          backgroundColor: AWColors.primary,
         ),
         body: const CustomerInfo(),
         bottomNavigationBar: BottomNavigationBar(
-          selectedItemColor: AppColors.colorDark,
-          unselectedItemColor: AppColors.colorDisabled,
+          selectedItemColor: AWColors.colorDark,
+          unselectedItemColor: AWColors.colorDisabled,
           items: [
             BottomNavigationBarItem(
               icon: Icon(Icons.home),

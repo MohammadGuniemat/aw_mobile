@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class AppColors {
+class AWColors {
   static const Color primary = Color.fromARGB(255, 116, 10, 138);
   static const Color secondary = Colors.blueAccent;
   static const Color background = Colors.white;

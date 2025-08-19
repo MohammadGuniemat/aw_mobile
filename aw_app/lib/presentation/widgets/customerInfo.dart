@@ -12,10 +12,32 @@ class CustomerInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final langProvider = Provider.of<LangPrvider>(context);
 
+    return ListView.builder(
+      itemCount: 100,
+      itemBuilder: (context, index) {
+        return Column(
+          children: [
+            customerWidget(langProvider: langProvider),
+            Divider(color: AWColors.colorDark, thickness: 1, height: 1),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class customerWidget extends StatelessWidget {
+  const customerWidget({super.key, required this.langProvider});
+
+  final LangPrvider langProvider;
+
+  @override
+  Widget build(BuildContext context) {
     return ListTile(
+      tileColor: AWColors.colorLight, // Set your desired background color here
       leading: CircleAvatar(
         radius: 27, // outer radius (border)
-        backgroundColor: AppColors.primary, // border color
+        backgroundColor: AWColors.primary, // border color
         child: CircleAvatar(
           radius: 22, // inner circle (actual image size)
           backgroundImage: NetworkImage(ImagesURLS.personImg),
