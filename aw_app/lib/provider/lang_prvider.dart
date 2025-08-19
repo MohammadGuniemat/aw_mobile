@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class LangPrvider extends ChangeNotifier {
-  String _lang = 'ar';
+  String _lang = 'eng';
 
   String get lang => _lang;
 

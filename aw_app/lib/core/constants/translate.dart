@@ -3,6 +3,7 @@ class Translate {
     'LandTitle': {"eng": "Aw Company", "ar": "شركة مياه العقبة"},
     'Settings': {"eng": "Settings", "ar": "إعدادات"},
     'Home': {"eng": "Home", "ar": "الرئيسية"},
+    'GoTo': {"eng": "Go To : ", "ar": "انتقل إلى : "},
     'customer': {"eng": "Customer", "ar": "المشترك"},
     'customerNumber': {"eng": "Customer Number", "ar": "رقم المشترك"},
     'customerName': {"eng": "Customer Name", "ar": "اسم المشترك"},
