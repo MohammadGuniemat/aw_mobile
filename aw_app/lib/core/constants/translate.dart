@@ -23,6 +23,16 @@ class Translate {
     'customerStatus': {"eng": "Customer Status", "ar": "حالة المشترك"},
     'customerStatusActive': {"eng": "Active", "ar": "نشط"},
     'customerStatusInactive': {"eng": "Inactive", "ar": "غير نشط"},
+
+    "EnterCredentials": {
+      "eng": "Enter your credentials here:",
+      "ar": "أدخل بيانات الحساب الخاصة بك هنا:",
+    },
+    "Email": {"eng": "Email", "ar": "البريد الإلكتروني"},
+    "Password": {"eng": "Password", "ar": "كلمة المرور"},
+    "Submit": {"eng": "Submit", "ar": "إرسال"},
+    "NoAccount": {"eng": "Don't have an account?", "ar": "ليس لديك حساب؟"},
+    "Register": {"eng": "Register", "ar": "تسجيل"},
   };
 
   static String get(String key, {String lang = "eng"}) {
