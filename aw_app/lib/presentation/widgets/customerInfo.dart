@@ -13,6 +13,7 @@ class CustomerInfo extends StatelessWidget {
     final langProvider = Provider.of<LangPrvider>(context);
 
     return ListView.builder(
+      physics: BouncingScrollPhysics(),
       itemCount: 100,
       itemBuilder: (context, index) {
         return Column(
