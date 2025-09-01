@@ -1,8 +1,9 @@
 class Translate {
   static const Map<String, Map<String, String>> words = {
-    'LandTitle': {"eng": "Aw Company", "ar": "شركة مياه العقبة"},
+    'LandTitle': {"eng": "Aw Compan8y", "ar": "شركة مياه العقبة"},
     'Settings': {"eng": "Settings", "ar": "إعدادات"},
     'Home': {"eng": "Home", "ar": "الرئيسية"},
+    'Login': {"eng": "Login", "ar": "تسجيل الدخول"},
     'GoTo': {"eng": "Go To : ", "ar": "انتقل إلى : "},
     'customer': {"eng": "Customer", "ar": "المشترك"},
     'customerNumber': {"eng": "Customer Number", "ar": "رقم المشترك"},

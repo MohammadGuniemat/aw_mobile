@@ -5,8 +5,8 @@ import 'package:aw_app/provider/lang_prvider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class Landingpage extends StatelessWidget {
-  const Landingpage({super.key});
+class userInfoPage extends StatelessWidget {
+  const userInfoPage({super.key});
 
   @override
   Widget build(BuildContext context) {

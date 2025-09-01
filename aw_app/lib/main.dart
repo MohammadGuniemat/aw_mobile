@@ -1,5 +1,5 @@
 import 'package:aw_app/presentation/pages/landingpage.dart';
-import 'package:aw_app/presentation/pages/login_page.dart';
+import 'package:aw_app/presentation/pages/loginPage.dart';
 import 'package:aw_app/provider/lang_prvider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'AW bAPP',
+      title: 'AW APP',
       home: const LoginPage(),
     );
   }

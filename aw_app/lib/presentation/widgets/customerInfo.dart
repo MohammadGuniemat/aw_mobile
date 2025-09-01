@@ -40,7 +40,7 @@ class customerWidget extends StatelessWidget {
         backgroundColor: AWColors.primary, // border color
         child: CircleAvatar(
           radius: 22, // inner circle (actual image size)
-          backgroundImage: NetworkImage(ImagesURLS.personImg),
+          backgroundImage: AssetImage('assets/images/aw.jpg'),
           backgroundColor: Colors.grey[200], // fallback if image fails
         ),
       ),
