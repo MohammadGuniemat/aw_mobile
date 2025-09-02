@@ -33,6 +33,9 @@ class Translate {
     "Submit": {"eng": "Submit", "ar": "إرسال"},
     "NoAccount": {"eng": "Don't have an account?", "ar": "ليس لديك حساب؟"},
     "Register": {"eng": "Register", "ar": "تسجيل"},
+    "EnterEmail": {"eng": "Enter Email", "ar": "أدخل البريد الإلكتروني"},
+    "EnterPassword": {"eng": "Enter Password", "ar": "أدخل كلمة المرور"},
+    "NetworkError": {"eng": "Network Error", "ar": "خطأ في الشبكة"},
   };
 
   static String get(String key, {String lang = "eng"}) {

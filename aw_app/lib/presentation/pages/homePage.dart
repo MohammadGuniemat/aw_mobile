@@ -1,7 +1,6 @@
 import 'package:aw_app/core/constants/translate.dart';
 import 'package:aw_app/core/theme/colors.dart';
 import 'package:aw_app/presentation/pages/loginPage.dart';
-import 'package:aw_app/presentation/pages/user_info.dart';
 import 'package:aw_app/provider/lang_prvider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
