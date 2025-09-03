@@ -31,15 +31,15 @@ abstract class ExtractToken {
     return payload['role'] ?? 'Unknown Role';
   }
 
-  static String extractProfileImgUrl(String token) {
-    final payload = parseJwt(token);
-    print(payload['profilePictureURL']);
-    return payload['profilePictureURL'] ?? 'profilePictureURL Role';
-  }
-
   static int extractUserID(String token) {
     final payload = parseJwt(token);
     print(payload['id']);
     return payload['id'] ?? 0;
   }
+
+  // static String extractProfileImgUrl(String token) {
+  //   final payload = parseJwt(token);
+  //   print(payload['profilePictureURL']);
+  //   return payload['profilePictureURL'] ?? 'profilePictureURL Role';
+  // }
 }

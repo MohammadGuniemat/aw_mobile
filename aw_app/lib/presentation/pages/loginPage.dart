@@ -36,12 +36,13 @@ class _LoginPageState extends State<LoginPage> {
       final response = await Api.post.login(username, password);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print(response.body);
 
         // ✅ Save token locally
         // final prefs = await SharedPreferences.getInstance();
         // await prefs.setString('token', data['token']);
         auth.saveToken(data['token']);
-
+        auth.savProfilePicture(data['results'][0]['profilePictureURL']);
         // ✅ Success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

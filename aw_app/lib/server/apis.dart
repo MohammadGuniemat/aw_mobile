@@ -19,7 +19,7 @@ class _Post {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'username': username, 'password': password}),
     );
-
+    print(response);
     return response;
   }
 }

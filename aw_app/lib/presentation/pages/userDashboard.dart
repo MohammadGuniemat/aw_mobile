@@ -80,7 +80,9 @@ class _UserDashboardState extends State<UserDashboard> {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundImage: NetworkImage(profilePictureURL),
+                      backgroundImage: auth.profilePictureURL != null
+                          ? NetworkImage(auth.profilePictureURL!)
+                          : AssetImage('assets/images/aw.jpg'),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
