@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:aw_app/presentation/pages/pageWrapper.dart';
 import 'package:aw_app/presentation/pages/userDashboard.dart';
 import 'package:aw_app/provider/auth_provider.dart';
+import 'package:aw_app/provider/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:aw_app/core/constants/translate.dart';
 import 'package:aw_app/core/theme/colors.dart';
@@ -26,11 +27,11 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
 
   Future<void> _login(BuildContext context, String lang) async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
     setState(() => _isLoading = true);
 
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
-    final auth = Provider.of<AuthProvider>(context, listen: false);
 
     try {
       final response = await Api.post.login(username, password);
@@ -43,6 +44,12 @@ class _LoginPageState extends State<LoginPage> {
         // await prefs.setString('token', data['token']);
         auth.saveToken(data['token']);
         auth.savProfilePicture(data['results'][0]['profilePictureURL']);
+        // update the use tasks in the provider
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        if (auth.token != null && auth.userID != null) {
+          await taskProvider.fetchTasks(auth.token!, auth.userID!);
+        }
+
         // ✅ Success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

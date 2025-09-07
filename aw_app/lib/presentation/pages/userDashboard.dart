@@ -1,5 +1,10 @@
+import 'dart:developer';
+
 import 'package:aw_app/core/theme/colors.dart';
+import 'package:aw_app/models/taskModel.dart';
+import 'package:aw_app/presentation/widgets/userWidgets/userDashboardWidget.dart';
 import 'package:aw_app/provider/auth_provider.dart';
+import 'package:aw_app/provider/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,149 +16,26 @@ class UserDashboard extends StatefulWidget {
 }
 
 class _UserDashboardState extends State<UserDashboard> {
-  String _selectedPage = "Dashboard"; // default
+  String _selectedPage = "My Tasks"; // default
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-
+    final taskProvider = context.watch<TaskProvider>();
+    final tasksCounts = taskProvider.tasksCounts;
     final username = auth.username ?? "User";
     final role = auth.role ?? "N/A";
     final profilePictureURL = auth.profilePictureURL ?? "N/A";
     final userID = auth.userID ?? "N/A";
 
-    final stats = [
-      {
-        "title": "TOTAL TASKS",
-        "icon": Icons.list,
-        "count": 1,
-        "color": Colors.blue,
-      },
-      {
-        "title": "PENDING",
-        "icon": Icons.pending,
-        "count": 0,
-        "color": Colors.purple,
-      },
-      {
-        "title": "RECEIVED",
-        "icon": Icons.inbox,
-        "count": 0,
-        "color": Colors.orange,
-      },
-      {
-        "title": "SUBMITTED",
-        "icon": Icons.send,
-        "count": 0,
-        "color": Colors.green,
-      },
-      {
-        "title": "APPROVED",
-        "icon": Icons.check_circle,
-        "count": 1,
-        "color": Colors.teal,
-      },
-      {
-        "title": "BLOCKED",
-        "icon": Icons.block,
-        "count": 0,
-        "color": Colors.red,
-      },
-      {
-        "title": "HOLD",
-        "icon": Icons.autorenew,
-        "count": 0,
-        "color": Colors.indigo,
-      },
-    ];
-
     Widget _getPageContent() {
       switch (_selectedPage) {
         case "Dashboard":
-          return (SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ✅ Profile Row
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundImage: auth.profilePictureURL != null
-                          ? NetworkImage(auth.profilePictureURL!)
-                          : AssetImage('assets/images/aw.jpg'),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        "Welcome, $role $username!\nHere are your statistics:",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // ✅ Stats Grid
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: stats.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // change to 3 for wider screens
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.2,
-                  ),
-                  itemBuilder: (context, index) {
-                    final item = stats[index];
-                    return Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              item["icon"] as IconData,
-                              size: 32,
-                              color: item["color"] as Color,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              item["title"] as String,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "${item["count"]}",
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: item["color"] as Color,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ));
-
+          return DashboardContent(
+            username: auth.username ?? "User",
+            role: auth.role ?? "N/A",
+            profilePictureURL: auth.profilePictureURL ?? "",
+          );
         case "My Tasks":
           return const Center(
             child: Text(
@@ -199,6 +81,8 @@ class _UserDashboardState extends State<UserDashboard> {
               icon: const Icon(Icons.replay_outlined),
               onPressed: () {
                 auth.getUserInfo();
+                auth.savProfilePicture(auth.profilePictureURL!);
+                taskProvider.reloadTasks(auth.token!, auth.userID!);
               },
             ),
           ),
@@ -251,7 +135,7 @@ class _UserDashboardState extends State<UserDashboard> {
           ],
         ),
       ),
-      body: Center(child: _getPageContent()),
+      body: _getPageContent(),
     );
   }
 }

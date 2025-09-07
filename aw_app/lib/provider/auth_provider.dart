@@ -1,5 +1,8 @@
+import 'dart:ffi';
+
 import 'package:aw_app/utils/extract_token.dart';
 import 'package:flutter/material.dart';
+import 'package:aw_app/server/apis.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -8,6 +11,7 @@ class AuthProvider extends ChangeNotifier {
   String? _role;
   String? _profilePictureURL;
   int? _userID;
+  bool _is_loading = false;
 
   String? get token => _token;
   String? get username => _username;
@@ -15,6 +19,7 @@ class AuthProvider extends ChangeNotifier {
   String? get profilePictureURL => _profilePictureURL;
   int? get userID => _userID;
   bool get isLoggedIn => _token != null;
+  bool get is_loading => _is_loading;
 
   Future<void> loadToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -51,11 +56,27 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateUsername(String newUsername) async {
+    final response = await Api.put.updateUserInfo(_token!, userID!, {
+      'userName': newUsername,
+    });
+    notifyListeners();
+  }
+
+  Future<void> resetPassword(String newPassword) async {
+    // Implement password reset logic here
+    // This is a placeholder function
+    notifyListeners();
+  }
+
   Future<void> getUserInfo() async {
+    _is_loading = true;
     if (_token != null) {
       _username = ExtractToken.extractUsername(_token!);
       _role = ExtractToken.extractRole(_token!);
       _userID = ExtractToken.extractUserID(_token!);
+      _is_loading = false;
+
       notifyListeners();
     }
   }
