@@ -60,7 +60,6 @@ class AuthProvider extends ChangeNotifier {
       _profilePictureURL =
           'https://aw.jo/web/assets/uploads/media-uploader/aw21661878799.png';
     }
-
     notifyListeners();
   }
 
@@ -111,4 +110,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+
+
 }

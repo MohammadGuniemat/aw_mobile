@@ -1,5 +1,6 @@
 import 'package:aw_app/core/theme/colors.dart';
 import 'package:aw_app/provider/auth_provider.dart';
+import 'package:aw_app/server/apis.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -70,39 +71,19 @@ void changeProfile(BuildContext context) {
                   ),
                   InkWell(
                     onTap: () async {
-                      try {
-                        final ImagePicker picker = ImagePicker();
-                        final XFile? image = await picker.pickImage(
-                          source: ImageSource.gallery,
-                          maxWidth: 800,
-                          maxHeight: 800,
-                          imageQuality: 80,
-                        );
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? image = await picker.pickImage(
+                        source: ImageSource.gallery,
+                      );
 
-                        if (image != null) {
-                          // Optional: show temporary preview
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("📷 Profile picture selected"),
-                            ),
-                          );
-
-                          // Update profile picture in provider
-                          // authProvider.savProfilePicture(image.path);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("❌ No image selected"),
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        print(e);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("⚠️ Failed to pick image: $e"),
-                          ),
+                      if (image != null) {
+                        await Api.put.uploadProfilePicture(
+                          image.path,
+                          authProvider.userID!,
+                          authProvider.token!,
                         );
+                      } else {
+                        print("❌ No image selected");
                       }
                     },
                     child: Container(
