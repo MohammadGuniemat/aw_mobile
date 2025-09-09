@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ffi';
 
 import 'package:aw_app/utils/extract_token.dart';
@@ -10,6 +11,7 @@ class AuthProvider extends ChangeNotifier {
   String? _username;
   String? _role;
   String? _profilePictureURL;
+  String? _authStatus;
   int? _userID;
   bool _is_loading = false;
 
@@ -17,9 +19,15 @@ class AuthProvider extends ChangeNotifier {
   String? get username => _username;
   String? get role => _role;
   String? get profilePictureURL => _profilePictureURL;
+  String? get authStatus => _authStatus;
   int? get userID => _userID;
   bool get isLoggedIn => _token != null;
   bool get is_loading => _is_loading;
+
+  set authStatus(String? newStatus) {
+    _authStatus = newStatus;
+    notifyListeners(); // if you're using ChangeNotifier
+  }
 
   Future<void> loadToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -56,16 +64,39 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateUsername(String newUsername) async {
-    final response = await Api.put.updateUserInfo(_token!, userID!, {
-      'userName': newUsername,
-    });
+  Future<void> setUserinfo(Map<String, dynamic> newInfo) async {
+    print('newInfo: $newInfo');
+    _is_loading = true;
+    _authStatus = "⏳ Waiting for your actions ...";
     notifyListeners();
-  }
 
-  Future<void> resetPassword(String newPassword) async {
-    // Implement password reset logic here
-    // This is a placeholder function
+    if (_token == null || userID == null) {
+      _authStatus = "❌ Cannot update username: missing token or userID";
+      _is_loading = false;
+      notifyListeners();
+      return;
+    }
+
+    _authStatus = "🔄 Attempting to update username to: ${newInfo['userName']}";
+    notifyListeners();
+
+    try {
+      final response = await Api.put.updateUserInfo(_token!, userID!, newInfo);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        _username = newInfo['userName'];
+        _authStatus = "✅ ${data['message'] ?? 'Username updated successfully'}";
+      } else {
+        _authStatus =
+            "❌ Failed to update username: ${response.statusCode} ${response.body}";
+      }
+    } catch (e) {
+      _authStatus = "❌ Exception while updating username: $e";
+    }
+
+    _is_loading = false;
     notifyListeners();
   }
 

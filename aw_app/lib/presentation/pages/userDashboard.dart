@@ -16,16 +16,16 @@ class UserDashboard extends StatefulWidget {
 }
 
 class _UserDashboardState extends State<UserDashboard> {
-  String _selectedPage = "My Tasks"; // default
+  String _selectedPage = "Dashboard"; // default
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context, listen: true);
     final taskProvider = context.watch<TaskProvider>();
-    final tasksCounts = taskProvider.tasksCounts;
+    // final tasksCounts = taskProvider.tasksCounts;
     final username = auth.username ?? "User";
     final role = auth.role ?? "N/A";
-    final profilePictureURL = auth.profilePictureURL ?? "N/A";
+    // final profilePictureURL = auth.profilePictureURL ?? "N/A";
     final userID = auth.userID ?? "N/A";
 
     Widget _getPageContent() {

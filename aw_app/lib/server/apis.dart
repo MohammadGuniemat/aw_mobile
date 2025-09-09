@@ -77,6 +77,8 @@ class _Put {
       body: jsonEncode(updatedData), // send updated fields
     );
     print(response.body);
+
+    await Future.delayed(Duration(seconds: 3));
     return response;
   }
 }
