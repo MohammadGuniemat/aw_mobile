@@ -88,7 +88,7 @@ void changeProfile(BuildContext context) {
                           );
 
                           // Update profile picture in provider
-                          authProvider.savProfilePicture(image.path);
+                          // authProvider.savProfilePicture(image.path);
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -97,6 +97,7 @@ void changeProfile(BuildContext context) {
                           );
                         }
                       } catch (e) {
+                        print(e);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text("⚠️ Failed to pick image: $e"),
@@ -231,8 +232,8 @@ void changeProfile(BuildContext context) {
       );
     },
   ).then((_) {
-    usernameController.dispose();
-    passwordController.dispose();
+    // usernameController.dispose();
+    // passwordController.dispose();
     // ✅ This runs after the bottom sheet is popped
     print("Bottom sheet closed");
     // You can trigger any action here, like resetting authStatus
