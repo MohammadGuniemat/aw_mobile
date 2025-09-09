@@ -23,6 +23,7 @@ void changeProfile(BuildContext context) {
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     backgroundColor: Colors.white,
+
     builder: (context) {
       return Padding(
         padding: EdgeInsets.only(
@@ -58,16 +59,22 @@ void changeProfile(BuildContext context) {
               const SizedBox(height: 20),
 
               // ✅ Profile picture
+              // ✅ Profile picture
               Stack(
                 alignment: Alignment.bottomRight,
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: NetworkImage(
-                      authProvider.profilePictureURL?.isNotEmpty == true
-                          ? authProvider.profilePictureURL!
-                          : 'https://aw.jo/web/assets/uploads/media-uploader/aw21661878799.png',
-                    ),
+                  Selector<AuthProvider, String?>(
+                    selector: (_, provider) => provider.profilePictureURL,
+                    builder: (context, profilePictureURL, child) {
+                      return CircleAvatar(
+                        radius: 50,
+                        backgroundImage: NetworkImage(
+                          (profilePictureURL?.isNotEmpty ?? false)
+                              ? profilePictureURL!
+                              : 'https://aw.jo/web/assets/uploads/media-uploader/aw21661878799.png',
+                        ),
+                      );
+                    },
                   ),
                   InkWell(
                     onTap: () async {
@@ -77,7 +84,7 @@ void changeProfile(BuildContext context) {
                       );
 
                       if (image != null) {
-                        await Api.put.uploadProfilePicture(
+                        authProvider.uploadProfilePicture(
                           image.path,
                           authProvider.userID!,
                           authProvider.token!,
@@ -220,6 +227,7 @@ void changeProfile(BuildContext context) {
     // You can trigger any action here, like resetting authStatus
     if (!authProvider.is_loading) {
       authProvider.authStatus = '⏳ Waiting for your actions ...';
+      authProvider.refreshSingleUserInfo();
     }
   });
 }

@@ -64,6 +64,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> setUserinfo(Map<String, dynamic> newInfo) async {
+    if (_profilePictureURL != null) {
+      newInfo['profilePictureURL'] = _profilePictureURL;
+    }
     print('newInfo: $newInfo');
     _is_loading = true;
     _authStatus = "⏳ Waiting for your actions ...";
@@ -87,6 +90,8 @@ class AuthProvider extends ChangeNotifier {
 
         _username = newInfo['userName'];
         _authStatus = "✅ ${data['message'] ?? 'Username updated successfully'}";
+        refreshSingleUserInfo();
+
       } else {
         _authStatus =
             "❌ Failed to update username: ${response.statusCode} ${response.body}";
@@ -111,6 +116,51 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshSingleUserInfo() async {
+    _is_loading = true;
+    try {
+      final response = await Api.get.getSingleUserInfo(_token!, _userID!);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        //  [{user_id: 1047, userName: new, role: user      , account_status: true, profilePictureURL: http://192.168.43.73:3003/uploads/e6ff5856e8c32e193bcbda95db90deff}]
+        final user = data[0];
 
+        _username = user['userName'];
+        _role = user['role'];
+        print(user['profilePictureURL']);
+        _profilePictureURL = user['profilePictureURL'];
+        savProfilePicture(user['profilePictureURL']);
+        print("refresh ended successfully ");
+        notifyListeners();
+      } else {
+        print("error refresh user info");
+      }
+    } catch (e) {
+      print("Exception while refresh user info: $e");
+    }
+    _is_loading = false;
+  }
 
+  Future<void> uploadProfilePicture(
+    String path,
+    int userId,
+    String token,
+  ) async {
+    try {
+      final response = await Api.put.uploadProfilePicture(path, userId, token);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // setUserinfo({'profilePictureURL': data['profilePictureURL']});
+        savProfilePicture(data['profilePictureURL']);
+        _profilePictureURL = data['profilePictureURL'];
+        notifyListeners();
+      } else {
+        print(
+          "error uploading profile picture: ${response.statusCode} ${response.body}",
+        );
+      }
+    } catch (e) {
+      print("Exception while uploading profile picture: $e");
+    }
+  }
 }

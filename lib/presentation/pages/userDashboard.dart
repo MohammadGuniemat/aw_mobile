@@ -81,7 +81,8 @@ class _UserDashboardState extends State<UserDashboard> {
               icon: const Icon(Icons.replay_outlined),
               onPressed: () {
                 auth.getUserInfo();
-                auth.savProfilePicture(auth.profilePictureURL!);
+                auth.refreshSingleUserInfo();
+                // auth.savProfilePicture(auth.profilePictureURL!);
                 taskProvider.reloadTasks(auth.token!, auth.userID!);
               },
             ),
