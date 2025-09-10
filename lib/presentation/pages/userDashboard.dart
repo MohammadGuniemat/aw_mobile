@@ -1,12 +1,13 @@
-import 'dart:developer';
-
 import 'package:aw_app/core/theme/colors.dart';
-import 'package:aw_app/models/taskModel.dart';
+import 'package:aw_app/presentation/pages/logoutPage.dart';
+import 'package:aw_app/presentation/pages/profilePage.dart';
 import 'package:aw_app/presentation/widgets/userWidgets/userDashboardWidget.dart';
+import 'package:aw_app/presentation/widgets/userWidgets/userTasksWidget.dart';
 import 'package:aw_app/provider/auth_provider.dart';
 import 'package:aw_app/provider/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({Key? key}) : super(key: key);
@@ -18,15 +19,18 @@ class UserDashboard extends StatefulWidget {
 class _UserDashboardState extends State<UserDashboard> {
   String _selectedPage = "Dashboard"; // default
 
+  final List<String> _pages = ["Dashboard", "My Tasks", "Profile", "Logout"];
+  final List<IconData> _icons = [
+    Icons.dashboard,
+    Icons.task,
+    Icons.person,
+    Icons.logout,
+  ];
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: true);
     final taskProvider = context.watch<TaskProvider>();
-    // final tasksCounts = taskProvider.tasksCounts;
-    final username = auth.username ?? "User";
-    final role = auth.role ?? "N/A";
-    // final profilePictureURL = auth.profilePictureURL ?? "N/A";
-    final userID = auth.userID ?? "N/A";
 
     Widget _getPageContent() {
       switch (_selectedPage) {
@@ -37,36 +41,17 @@ class _UserDashboardState extends State<UserDashboard> {
             profilePictureURL: auth.profilePictureURL ?? "",
           );
         case "My Tasks":
-          return const Center(
-            child: Text(
-              "Here are your tasks 📋",
-              style: TextStyle(fontSize: 20),
-            ),
-          );
+          return const UserTasks();
         case "Profile":
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.person, size: 80, color: AWColors.primary),
-                const SizedBox(height: 10),
-                Text("Name: $username", style: const TextStyle(fontSize: 18)),
-                Text("Role: $role", style: const TextStyle(fontSize: 18)),
-                Text("ID: $userID", style: const TextStyle(fontSize: 18)),
-              ],
-            ),
-          );
+          return const ProfilePage();
         case "Logout":
-          return const Center(
-            child: Text(
-              "You have logged out 🚪",
-              style: TextStyle(fontSize: 20, color: Colors.red),
-            ),
-          );
+          return const LogoutPage();
         default:
           return const Center(child: Text("Page not found"));
       }
     }
+
+    int _currentIndex = _pages.indexOf(_selectedPage);
 
     return Scaffold(
       appBar: AppBar(
@@ -82,7 +67,6 @@ class _UserDashboardState extends State<UserDashboard> {
               onPressed: () {
                 auth.getUserInfo();
                 auth.refreshSingleUserInfo();
-                // auth.savProfilePicture(auth.profilePictureURL!);
                 taskProvider.reloadTasks(auth.token!, auth.userID!);
               },
             ),
@@ -101,42 +85,38 @@ class _UserDashboardState extends State<UserDashboard> {
                 style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('Dashboard'),
-              onTap: () {
-                setState(() => _selectedPage = "Dashboard");
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.task),
-              title: const Text('My Tasks'),
-              onTap: () {
-                setState(() => _selectedPage = "My Tasks");
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Profile'),
-              onTap: () {
-                setState(() => _selectedPage = "Profile");
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () {
-                setState(() => _selectedPage = "Logout");
-                Navigator.pop(context);
-              },
-            ),
+            ...List.generate(_pages.length, (index) {
+              return ListTile(
+                leading: Icon(_icons[index]),
+                title: Text(_pages[index]),
+                onTap: () {
+                  setState(() => _selectedPage = _pages[index]);
+                  Navigator.pop(context);
+                },
+              );
+            }),
           ],
         ),
       ),
       body: _getPageContent(),
+      bottomNavigationBar: ConvexAppBar(
+        key: ValueKey(_selectedPage), // force rebuild when page changes
+        style: TabStyle.react,
+        backgroundColor: Colors.white,
+        activeColor: AWColors.primary,
+        color: Colors.grey,
+        elevation: 8,
+        curveSize: 75,
+        initialActiveIndex: _currentIndex, // still used
+        items: List.generate(_pages.length, (index) {
+          return TabItem(icon: _icons[index], title: _pages[index]);
+        }),
+        onTap: (index) {
+          setState(() {
+            _selectedPage = _pages[index]; // updates current page
+          });
+        },
+      ),
     );
   }
 }

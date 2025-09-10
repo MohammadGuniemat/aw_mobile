@@ -38,9 +38,36 @@ void changeProfile(BuildContext context) {
             children: [
               IconButton(
                 onPressed: () => {Navigator.pop(context)},
-                icon: Icon(Icons.arrow_downward_rounded),
+                icon: Icon(Icons.close),
               ),
-              // ✅ Drag handle
+              // status monitoring
+              Builder(
+                builder: (context) {
+                  return Selector<AuthProvider, String?>(
+                    selector: (_, provider) => provider.authStatus,
+                    builder: (context, authStatus, child) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              authStatus ?? 'Nothing yet initialized',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AWColors
+                                    .primary, // Set your desired color here
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
               Container(
                 width: 50,
                 height: 5,
@@ -144,10 +171,13 @@ void changeProfile(BuildContext context) {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.save),
-                  label: const Text("Save Changes"),
+                  icon: const Icon(Icons.save, color: AWColors.background),
+                  label: const Text(
+                    "Save Changes",
+                    style: TextStyle(color: AWColors.background),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
+                    backgroundColor: AWColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -181,38 +211,6 @@ void changeProfile(BuildContext context) {
                     );
                   },
                 ),
-              ),
-
-              Builder(
-                builder: (context) {
-                  return Selector<AuthProvider, String?>(
-                    selector: (_, provider) => provider.authStatus,
-                    builder: (context, authStatus, child) {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              authStatus ?? 'Nothing yet initialized',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: AWColors
-                                    .primary, // Set your desired color here
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            // IconButton(
-                            //   onPressed: () => {Navigator.pop(context)},
-                            //   icon: Icon(Icons.arrow_downward_rounded),
-                            // ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
               ),
             ],
           ),

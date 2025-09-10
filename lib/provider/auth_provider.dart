@@ -91,7 +91,6 @@ class AuthProvider extends ChangeNotifier {
         _username = newInfo['userName'];
         _authStatus = "✅ ${data['message'] ?? 'Username updated successfully'}";
         refreshSingleUserInfo();
-
       } else {
         _authStatus =
             "❌ Failed to update username: ${response.statusCode} ${response.body}";
@@ -162,5 +161,45 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       print("Exception while uploading profile picture: $e");
     }
+  }
+
+  /// Returns the token expiration date, or null if token is missing/invalid
+  DateTime? get tokenExpiryDate {
+    if (_token == null) return null;
+
+    try {
+      // JWT structure: header.payload.signature
+      final parts = _token!.split('.');
+      if (parts.length != 3) return null;
+
+      final payload = parts[1];
+      final normalized = base64Url.normalize(payload);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      final map = jsonDecode(decoded);
+
+      if (map.containsKey('exp')) {
+        final exp = map['exp'];
+        // JWT exp is in seconds since epoch
+        return DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      }
+    } catch (e) {
+      print("Error decoding token: $e");
+    }
+
+    return null;
+  }
+
+  Future<void> logout() async {
+    _token = null;
+    _username = null;
+    _role = null;
+    _profilePictureURL = null;
+    _authStatus = null;
+    _userID = null;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+
+    notifyListeners();
   }
 }
