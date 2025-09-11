@@ -10,28 +10,6 @@ class TaskProvider extends ChangeNotifier {
   bool _isLoading = false;
   String _error = '';
 
-  // RF Status map with description and color
-  Map<int, Map<String, dynamic>> rfStatusMap = {
-    1: {
-      'desc': 'PENDING',
-      'color': Color.fromARGB(255, 117, 4, 83),
-      'icon': Icons.pending,
-    },
-    2: {'desc': 'RECEIVED', 'color': Color(0xFFFAAD14), 'icon': Icons.receipt},
-    3: {'desc': 'SUBMITTED', 'color': Color(0xFF3A8A13), 'icon': Icons.done},
-    4: {
-      'desc': 'APPROVED',
-      'color': Color.fromARGB(255, 2, 2, 2),
-      'icon': Icons.admin_panel_settings,
-    },
-    5: {'desc': 'BLOCKED', 'color': Color(0xFFF44336), 'icon': Icons.block},
-    6: {
-      'desc': 'HOLD',
-      'color': Color.fromARGB(255, 195, 21, 218),
-      'icon': Icons.shutter_speed_rounded,
-    },
-  };
-
   // Getters
   List<TaskModel> get tasks => _tasks;
   bool get isLoading => _isLoading;
@@ -52,21 +30,24 @@ class TaskProvider extends ChangeNotifier {
         _tasks = taskList.map((e) => TaskModel.fromJson(e)).toList();
         _error = '';
 
-        // Initialize counts for all rfStatusMap entries with 0
+        // Clear previous counts
         _tasksCounts = {};
-        rfStatusMap.forEach((key, value) {
-          _tasksCounts[key] = {
-            'desc': value['desc'],
-            'color': value['color'],
-            'icon': value['icon'], // copy the icon from rfStatusMap
-            'count': 0,
-          };
-        });
 
-        // Count tasks per rFStatus if it exists in rfStatusMap
+        // Count tasks per rFStatus and get color/desc from tasks themselves
         for (var task in _tasks) {
-          if (rfStatusMap.containsKey(task.rFStatus)) {
-            _tasksCounts[task.rFStatus]!['count'] += 1;
+          if (task.rFStatus != null) {
+            // If we haven't seen this status yet, initialize it
+            if (!_tasksCounts.containsKey(task.rFStatus)) {
+              _tasksCounts[task.rFStatus!] = {
+                'desc': task.rFStatusDesc ?? 'Unknown Status',
+                'color': _parseColorFromTask(task), // Get color from task
+                'icon': _getIconForStatus(task.rFStatus), // Get appropriate icon
+                'count': 0,
+              };
+            }
+            
+            // Increment count
+            _tasksCounts[task.rFStatus!]!['count'] += 1;
           }
         }
 
@@ -91,12 +72,55 @@ class TaskProvider extends ChangeNotifier {
     }
   }
 
+  // Parse color from task (handles both HEX strings and integer values)
+  Color _parseColorFromTask(TaskModel task) {
+    try {
+      // First try to get color from task's color field (if it's HEX)
+      if (task.color != null && task.color!.isNotEmpty) {
+        String hex = task.color!.replaceFirst('#', '');
+        if (hex.length == 6) hex = 'FF$hex';
+        return Color(int.parse(hex, radix: 16));
+      }
+      
+      // If no color field, fall back to status-based colors
+      return _getColorForStatus(task.rFStatus);
+    } catch (e) {
+      return _getColorForStatus(task.rFStatus); // Fallback to status color
+    }
+  }
+
+  // Fallback color mapping based on status ID
+  Color _getColorForStatus(int? statusId) {
+    switch (statusId) {
+      case 1: return const Color.fromARGB(255, 117, 4, 83);
+      case 2: return const Color(0xFFFAAD14);
+      case 3: return const Color(0xFF3A8A13);
+      case 4: return Colors.black;
+      case 5: return const Color(0xFFF44336);
+      case 6: return const Color.fromARGB(255, 195, 21, 218);
+      default: return Colors.grey;
+    }
+  }
+
+  // Get appropriate icon based on status
+  IconData _getIconForStatus(int? statusId) {
+    switch (statusId) {
+      case 1: return Icons.pending;
+      case 2: return Icons.receipt;
+      case 3: return Icons.done;
+      case 4: return Icons.admin_panel_settings;
+      case 5: return Icons.block;
+      case 6: return Icons.shutter_speed_rounded;
+      default: return Icons.task;
+    }
+  }
+
   // reload task on refresh
   Future<void> reloadTasks(String token, int userId) async {
     await fetchTasks(token, userId);
   }
 
-  // Example call from your Flutter widget
+  // Get filtered tasks for detailed view
   Future<List<TaskModel>> loadUserSingleFilteredTasks(
     String token,
     int userId,
@@ -118,20 +142,12 @@ class TaskProvider extends ChangeNotifier {
 
         if (data['success'] == true) {
           final List<dynamic> tasksData = data['data'];
-
-          // Convert API response to TaskModel objects
-          List<TaskModel> tasks = tasksData.map((taskJson) {
-            return TaskModel.fromJson(taskJson);
-          }).toList();
-
-          return tasks;
+          return tasksData.map((taskJson) => TaskModel.fromJson(taskJson)).toList();
         } else {
           throw Exception('API Error: ${data['error']}');
         }
       } else {
-        throw Exception(
-          'Failed to load tasks. Status code: ${response.statusCode}',
-        );
+        throw Exception('Failed to load tasks. Status code: ${response.statusCode}');
       }
     } on http.ClientException catch (e) {
       throw Exception('Network error: $e');
@@ -140,5 +156,15 @@ class TaskProvider extends ChangeNotifier {
     } catch (e) {
       throw Exception('Unexpected error: $e');
     }
+  }
+
+  // Helper method to get color for UI (if you need it elsewhere)
+  Color getStatusColor(TaskModel task) {
+    return _parseColorFromTask(task);
+  }
+
+  // Helper method to get description for UI
+  String getStatusDescription(TaskModel task) {
+    return task.rFStatusDesc ?? 'Unknown Status';
   }
 }
