@@ -36,7 +36,7 @@ class UserTasks extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                auth.username ?? "Guest",
+                'Hi, ${auth.username!.toUpperCase() ?? "Guest"}',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -44,7 +44,7 @@ class UserTasks extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                auth.role ?? "No role",
+                ' You Currently Logged as: ${auth.role ?? "No role"}',
                 style: const TextStyle(fontSize: 14, color: AWColors.primary),
               ),
             ],
@@ -95,8 +95,8 @@ class UserTasks extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) => UserDetailedTasksPage(
-                              tasks: selectedTasks,
-                              statusTitle: item['desc'] ?? "Tasks",
+                              userId: auth.userID!,
+                              statusFilter: item['desc'] ?? "Tasks",
                             ),
                           ),
                         );
@@ -151,6 +151,19 @@ class UserTasks extends StatelessWidget {
                   },
                 ),
         ),
+
+        // FloatingActionButton(
+        //   onPressed: () => {
+        //     taskProvider.loadUserSingleFilteredTasks(
+        //       auth.token!,
+        //       auth.userID!,
+        //       "APPROVED",
+        //       1,
+        //       1,
+        //     ),
+        //   },
+        //   child: Text('Get user approved tasks'),
+        // ),
       ],
     );
   }

@@ -1,4 +1,5 @@
 class TaskModel {
+  // Original fields
   int? rFID;
   String? rFName;
   int? governorateID;
@@ -22,7 +23,22 @@ class TaskModel {
   bool? isTemplate;
   bool? samplingAllowed;
 
+  // New fields from [FORM-INFO] view
+  String? governorateName;
+  String? sectorDesc;
+  String? statusDesc;
+  String? departmentName;
+  String? collectorName;
+  String? rFStatusDesc;
+  String? weatherDesc;
+  String? collectorUserName;
+  String? ownerUserName;
+  String? areaName;
+  String? waterTypeName;
+  String? color;
+
   TaskModel({
+    // Original parameters
     this.rFID,
     this.rFName,
     this.governorateID,
@@ -45,6 +61,20 @@ class TaskModel {
     this.waterTypeID,
     this.isTemplate,
     this.samplingAllowed,
+
+    // New parameters from view
+    this.governorateName,
+    this.sectorDesc,
+    this.statusDesc,
+    this.departmentName,
+    this.collectorName,
+    this.rFStatusDesc,
+    this.weatherDesc,
+    this.collectorUserName,
+    this.ownerUserName,
+    this.areaName,
+    this.waterTypeName,
+    this.color,
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
@@ -57,64 +87,67 @@ class TaskModel {
       }
     }
 
+    int? parseInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value);
+      return null;
+    }
+
+    bool? parseBool(dynamic value) {
+      if (value == null) return null;
+      if (value is bool) return value;
+      if (value is int) return value == 1;
+      if (value is String) {
+        return value.toLowerCase() == 'true' || value == '1';
+      }
+      return null;
+    }
+
     return TaskModel(
-      rFID: json['RFID'] is int
-          ? json['RFID']
-          : int.tryParse(json['RFID']?.toString() ?? ''),
+      // Original field mappings
+      rFID: parseInt(json['RFID']),
       rFName: json['RFName']?.toString(),
-      governorateID: json['GovernorateID'] is int
-          ? json['GovernorateID']
-          : int.tryParse(json['GovernorateID']?.toString() ?? ''),
-      sectorID: json['SectorID'] is int
-          ? json['SectorID']
-          : int.tryParse(json['SectorID']?.toString() ?? ''),
-      statusID: json['StatusID'] is int
-          ? json['StatusID']
-          : int.tryParse(json['StatusID']?.toString() ?? ''),
-      departmentID: json['DepartmentID'] is int
-          ? json['DepartmentID']
-          : int.tryParse(json['DepartmentID']?.toString() ?? ''),
-      collectorID: json['CollectorID'] is int
-          ? json['CollectorID']
-          : int.tryParse(json['CollectorID']?.toString() ?? ''),
-      rFStatus: json['RF_Status'] is int
-          ? json['RF_Status']
-          : int.tryParse(json['RF_Status']?.toString() ?? ''),
-      weatherID: json['WeatherID'] is int
-          ? json['WeatherID']
-          : int.tryParse(json['WeatherID']?.toString() ?? ''),
+      governorateID: parseInt(json['GovernorateID']),
+      sectorID: parseInt(json['SectorID']),
+      statusID: parseInt(json['StatusID']),
+      departmentID: parseInt(json['DepartmentID']),
+      collectorID: parseInt(json['CollectorID']),
+      rFStatus: parseInt(json['RF_Status']),
+      weatherID: parseInt(json['WeatherID']),
       applicationDate: parseDate(json['ApplicationDate']),
-      ownerID: json['ownerID'] is int
-          ? json['ownerID']
-          : int.tryParse(json['ownerID']?.toString() ?? ''),
-      receivedBy: json['ReceivedBy'] is int
-          ? json['ReceivedBy']
-          : int.tryParse(json['ReceivedBy']?.toString() ?? ''),
+      ownerID: parseInt(json['ownerID']),
+      receivedBy: parseInt(json['ReceivedBy']),
       receivedDate: parseDate(json['ReceivedDate']),
-      submittedBy: json['SubmittedBy'] is int
-          ? json['SubmittedBy']
-          : int.tryParse(json['SubmittedBy']?.toString() ?? ''),
+      submittedBy: parseInt(json['SubmittedBy']),
       submittedDate: parseDate(json['SubmittedDate']),
-      approvedBy: json['ApprovedBy'] is int
-          ? json['ApprovedBy']
-          : int.tryParse(json['ApprovedBy']?.toString() ?? ''),
+      approvedBy: parseInt(json['ApprovedBy']),
       approvedDate: parseDate(json['ApprovedDate']),
       notes: json['Notes']?.toString(),
-      areaID: json['AreaID'] is int
-          ? json['AreaID']
-          : int.tryParse(json['AreaID']?.toString() ?? ''),
-      waterTypeID: json['WaterTypeID'] is int
-          ? json['WaterTypeID']
-          : int.tryParse(json['WaterTypeID']?.toString() ?? ''),
-      isTemplate: json['IsTemplate'] is bool ? json['IsTemplate'] : null,
-      samplingAllowed: json['Sampling_allowed'] is bool
-          ? json['Sampling_allowed']
-          : null,
+      areaID: parseInt(json['AreaID']),
+      waterTypeID: parseInt(json['WaterTypeID']),
+      isTemplate: parseBool(json['IsTemplate']),
+      samplingAllowed: parseBool(json['Sampling_allowed']),
+
+      // New field mappings from view
+      governorateName: json['GovernorateName']?.toString(),
+      sectorDesc: json['SectorDesc']?.toString(),
+      statusDesc: json['StatusDesc']?.toString(),
+      departmentName: json['DepartmentName']?.toString(),
+      collectorName: json['CollectorName']?.toString(),
+      rFStatusDesc: json['RF_StatusDesc']?.toString(),
+      weatherDesc: json['WeatherDesc']?.toString(),
+      collectorUserName: json['CollectorUserName']?.toString(),
+      ownerUserName: json['OwnerUserName']?.toString(),
+      areaName: json['AreaName']?.toString(),
+      waterTypeName: json['WaterTypeName']?.toString(),
+      color: json['Color']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      // Original fields
       'RFID': rFID,
       'RFName': rFName,
       'GovernorateID': governorateID,
@@ -137,6 +170,25 @@ class TaskModel {
       'WaterTypeID': waterTypeID,
       'IsTemplate': isTemplate,
       'Sampling_allowed': samplingAllowed,
+
+      // New fields from view
+      'GovernorateName': governorateName,
+      'SectorDesc': sectorDesc,
+      'StatusDesc': statusDesc,
+      'DepartmentName': departmentName,
+      'CollectorName': collectorName,
+      'RF_StatusDesc': rFStatusDesc,
+      'WeatherDesc': weatherDesc,
+      'CollectorUserName': collectorUserName,
+      'OwnerUserName': ownerUserName,
+      'AreaName': areaName,
+      'WaterTypeName': waterTypeName,
+      'Color': color,
     };
+  }
+
+  @override
+  String toString() {
+    return 'TaskModel{RFID: $rFID, RFName: $rFName, Governorate: $governorateName, Status: $rFStatusDesc}';
   }
 }

@@ -75,6 +75,30 @@ class _Get {
 
     return response;
   }
+
+  Future<http.Response> userSingleFilteredTasks(
+    String token,
+    int userId,
+    String statusFilter,
+    int pageNumber,
+    int pageSize,
+  ) async {
+    // Build the complete URL with all parameters
+    final url = Uri.parse(
+      '${Api.baseUrl}/app/getSingleUserFormFilteredPaged/$userId/$statusFilter/$pageNumber/$pageSize',
+    );
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    debugPrint(response.body);
+    return response;
+  }
 }
 
 class _Put {
@@ -150,3 +174,4 @@ class _Put {
 // for approved tasks-form http://10.10.15.21:3003/api/userForms/1045?offset=0&limit=3&rf_StatusFilter=4
 // for samples http://10.10.15.21:3003/api/samples/1436 (userid)
 
+// http://10.10.15.21:3003/api/app/getSingleUserFormFilteredPaged/1045/APPROVED/1/1

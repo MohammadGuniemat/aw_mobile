@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:aw_app/models/taskModel.dart';
 import 'package:aw_app/server/apis.dart';
+import 'package:http/http.dart' as http;
 
 class TaskProvider extends ChangeNotifier {
   List<TaskModel> _tasks = [];
@@ -90,14 +91,54 @@ class TaskProvider extends ChangeNotifier {
     }
   }
 
+  // reload task on refresh
+  Future<void> reloadTasks(String token, int userId) async {
+    await fetchTasks(token, userId);
+  }
 
-// reload task on refresh
-  Future <void> reloadTasks (String token, int userId) async
-{
-await fetchTasks(token,userId);
+  // Example call from your Flutter widget
+  Future<List<TaskModel>> loadUserSingleFilteredTasks(
+    String token,
+    int userId,
+    String statusFilter,
+    int pageNumber,
+    int pageSize,
+  ) async {
+    try {
+      final response = await Api.get.userSingleFilteredTasks(
+        token,
+        userId,
+        statusFilter,
+        pageNumber,
+        pageSize,
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+
+        if (data['success'] == true) {
+          final List<dynamic> tasksData = data['data'];
+
+          // Convert API response to TaskModel objects
+          List<TaskModel> tasks = tasksData.map((taskJson) {
+            return TaskModel.fromJson(taskJson);
+          }).toList();
+
+          return tasks;
+        } else {
+          throw Exception('API Error: ${data['error']}');
+        }
+      } else {
+        throw Exception(
+          'Failed to load tasks. Status code: ${response.statusCode}',
+        );
+      }
+    } on http.ClientException catch (e) {
+      throw Exception('Network error: $e');
+    } on FormatException catch (e) {
+      throw Exception('JSON parsing error: $e');
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
 }
-
-}
-
-
-
