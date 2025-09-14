@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:aw_app/models/taskModel.dart';
+import 'package:aw_app/models/taskConfigModel.dart';
 import 'package:aw_app/server/apis.dart';
 import 'package:http/http.dart' as http;
 
 class TaskProvider extends ChangeNotifier {
   List<TaskModel> _tasks = [];
+  List<TaskConfigModel> _tasksConfigs = [];
   Map<int, Map<String, dynamic>> _tasksCounts = {};
   bool _isLoading = false;
   String _error = '';
@@ -16,7 +18,46 @@ class TaskProvider extends ChangeNotifier {
   String get error => _error;
   Map<int, Map<String, dynamic>> get tasksCounts => _tasksCounts;
 
-  // Fetch tasks from API
+  /// Fetch RF status configs (color, description)
+  Future<void> getColorWithStatus() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await Api.get.getColorsAndTxtStatus();
+      print('Raw API Response: ${response.body}');
+
+      final data = jsonDecode(response.body);
+      print('Decoded ColorStatusData: $data');
+
+      if (response.statusCode == 200) {
+        final _tasksConfigsList = data as List<dynamic>? ?? [];
+        _tasksConfigs = _tasksConfigsList
+            .map((e) => TaskConfigModel.fromJson(e))
+            .toList();
+
+        // Log readable info for each task config
+        for (var cfg in _tasksConfigs) {
+          print(
+            'rFStatusID: ${cfg.rFStatusID}, statusDesc: ${cfg.statusDesc}, color: ${cfg.color}',
+          );
+        }
+
+        _error = '';
+      } else {
+        _tasksConfigs = [];
+        _error = 'Error ${response.statusCode}: ${response.reasonPhrase}';
+      }
+    } catch (e) {
+      _tasksConfigs = [];
+      _error = 'Failed to load tasks: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Fetch tasks for a user
   Future<void> fetchTasks(String token, int userId) async {
     _isLoading = true;
     notifyListeners();
@@ -28,31 +69,50 @@ class TaskProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         final taskList = data['tasks']?['recordset'] as List<dynamic>? ?? [];
         _tasks = taskList.map((e) => TaskModel.fromJson(e)).toList();
+
         _error = '';
 
-        // Clear previous counts
+        // Initialize counts for all RF statuses from _tasksConfigs (API)
         _tasksCounts = {};
-
-        // Count tasks per rFStatus and get color/desc from tasks themselves
-        for (var task in _tasks) {
-          if (task.rFStatus != null) {
-            // If we haven't seen this status yet, initialize it
-            if (!_tasksCounts.containsKey(task.rFStatus)) {
-              _tasksCounts[task.rFStatus!] = {
-                'desc': task.rFStatusDesc ?? 'Unknown Status',
-                'color': _parseColorFromTask(task), // Get color from task
-                'icon': _getIconForStatus(task.rFStatus), // Get appropriate icon
-                'count': 0,
-              };
-            }
-            
-            // Increment count
-            _tasksCounts[task.rFStatus!]!['count'] += 1;
-          }
+        for (var cfg in _tasksConfigs) {
+          _tasksCounts[cfg.rFStatusID] = {
+            'desc': cfg.statusDesc,
+            'color': _hexToColor(cfg.color),
+            'icon': _getIconForStatus(cfg.rFStatusID),
+            'count': 0,
+          };
         }
 
-        final message = data['message'] ?? '';
-        debugPrint("✅ API Success: $message");
+        // Count tasks per status and map color/desc to tasks
+        for (var task in _tasks) {
+          final statusId = task.rFStatus ?? 0;
+
+          // Increment count
+          if (_tasksCounts.containsKey(statusId)) {
+            _tasksCounts[statusId]!['count'] += 1;
+          } else {
+            _tasksCounts[statusId] = {
+              'desc': task.statusDesc ?? 'N/A',
+              'color': Colors.grey,
+              'icon': Icons.task,
+              'count': 1,
+            };
+          }
+
+          // Map color and description to task
+          final cfg = _tasksConfigs.firstWhere(
+            (c) => c.rFStatusID == statusId,
+            orElse: () => TaskConfigModel(
+              rFStatusID: statusId,
+              statusDesc: 'N/A',
+              color: '#000000',
+            ),
+          );
+          task.statusDesc = cfg.statusDesc;
+          task.color = cfg.color;
+        }
+
+        debugPrint("✅ Tasks fetched successfully. Total: ${_tasks.length}");
       } else if (response.statusCode == 401) {
         _tasks = [];
         _tasksCounts = {};
@@ -72,55 +132,39 @@ class TaskProvider extends ChangeNotifier {
     }
   }
 
-  // Parse color from task (handles both HEX strings and integer values)
-  Color _parseColorFromTask(TaskModel task) {
-    try {
-      // First try to get color from task's color field (if it's HEX)
-      if (task.color != null && task.color!.isNotEmpty) {
-        String hex = task.color!.replaceFirst('#', '');
-        if (hex.length == 6) hex = 'FF$hex';
-        return Color(int.parse(hex, radix: 16));
-      }
-      
-      // If no color field, fall back to status-based colors
-      return _getColorForStatus(task.rFStatus);
-    } catch (e) {
-      return _getColorForStatus(task.rFStatus); // Fallback to status color
-    }
-  }
-
-  // Fallback color mapping based on status ID
-  Color _getColorForStatus(int? statusId) {
-    switch (statusId) {
-      case 1: return const Color.fromARGB(255, 117, 4, 83);
-      case 2: return const Color(0xFFFAAD14);
-      case 3: return const Color(0xFF3A8A13);
-      case 4: return Colors.black;
-      case 5: return const Color(0xFFF44336);
-      case 6: return const Color.fromARGB(255, 195, 21, 218);
-      default: return Colors.grey;
-    }
-  }
-
-  // Get appropriate icon based on status
-  IconData _getIconForStatus(int? statusId) {
-    switch (statusId) {
-      case 1: return Icons.pending;
-      case 2: return Icons.receipt;
-      case 3: return Icons.done;
-      case 4: return Icons.admin_panel_settings;
-      case 5: return Icons.block;
-      case 6: return Icons.shutter_speed_rounded;
-      default: return Icons.task;
-    }
-  }
-
-  // reload task on refresh
+  // Reload tasks
   Future<void> reloadTasks(String token, int userId) async {
     await fetchTasks(token, userId);
   }
 
-  // Get filtered tasks for detailed view
+  /// Helper: Convert hex color string to Color object
+  Color _hexToColor(String hex) {
+    hex = hex.replaceAll('#', '');
+    if (hex.length == 6) hex = 'FF$hex'; // add alpha
+    return Color(int.parse(hex, radix: 16));
+  }
+
+  /// Helper: Assign icon per RF status ID
+  IconData _getIconForStatus(int statusId) {
+    switch (statusId) {
+      case 1:
+        return Icons.pending;
+      case 2:
+        return Icons.receipt;
+      case 3:
+        return Icons.done;
+      case 4:
+        return Icons.admin_panel_settings;
+      case 5:
+        return Icons.block;
+      case 6:
+        return Icons.shutter_speed_rounded;
+      default:
+        return Icons.task;
+    }
+  }
+
+  // Example: Load single user tasks with filter and pagination
   Future<List<TaskModel>> loadUserSingleFilteredTasks(
     String token,
     int userId,
@@ -142,29 +186,17 @@ class TaskProvider extends ChangeNotifier {
 
         if (data['success'] == true) {
           final List<dynamic> tasksData = data['data'];
-          return tasksData.map((taskJson) => TaskModel.fromJson(taskJson)).toList();
+          return tasksData.map((t) => TaskModel.fromJson(t)).toList();
         } else {
           throw Exception('API Error: ${data['error']}');
         }
       } else {
-        throw Exception('Failed to load tasks. Status code: ${response.statusCode}');
+        throw Exception(
+          'Failed to load tasks. Status code: ${response.statusCode}',
+        );
       }
-    } on http.ClientException catch (e) {
-      throw Exception('Network error: $e');
-    } on FormatException catch (e) {
-      throw Exception('JSON parsing error: $e');
     } catch (e) {
       throw Exception('Unexpected error: $e');
     }
-  }
-
-  // Helper method to get color for UI (if you need it elsewhere)
-  Color getStatusColor(TaskModel task) {
-    return _parseColorFromTask(task);
-  }
-
-  // Helper method to get description for UI
-  String getStatusDescription(TaskModel task) {
-    return task.rFStatusDesc ?? 'Unknown Status';
   }
 }

@@ -144,6 +144,7 @@ class TaskModel {
       areaName: json['AreaName']?.toString(),
       waterTypeName: json['WaterTypeName']?.toString(),
       color: json['Color']?.toString(),
+      // color: Colors.red.toString(),
     );
   }
 

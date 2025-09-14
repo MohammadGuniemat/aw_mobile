@@ -152,18 +152,10 @@ class UserTasks extends StatelessWidget {
                 ),
         ),
 
-        // FloatingActionButton(
-        //   onPressed: () => {
-        //     taskProvider.loadUserSingleFilteredTasks(
-        //       auth.token!,
-        //       auth.userID!,
-        //       "APPROVED",
-        //       1,
-        //       1,
-        //     ),
-        //   },
-        //   child: Text('Get user approved tasks'),
-        // ),
+        FloatingActionButton(
+          onPressed: () => {taskProvider.getColorWithStatus()},
+          child: Text('Get user approved tasks'),
+        ),
       ],
     );
   }

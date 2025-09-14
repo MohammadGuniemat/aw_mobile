@@ -27,7 +27,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
 
   @override
   void initState() {
-    super.initState(); // ← Only one super.initState()
+    super.initState();
     _taskProvider = context.read<TaskProvider>();
     _authProvider = context.read<AuthProvider>();
     _loadTasks();
@@ -69,175 +69,265 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
             );
           } else {
             final tasks = snapshot.data!;
-            return _buildTasksList(tasks);
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              itemCount: tasks.length,
+              itemBuilder: (context, index) {
+                final task = tasks[index];
+                final appDate = task.applicationDate != null
+                    ? DateFormat(
+                        'dd MMM yyyy, hh:mm a',
+                      ).format(task.applicationDate!)
+                    : "N/A";
+                final statusColor = getStatusColor(task.color);
+
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: Colors.grey.shade300, width: 1.2),
+                  ),
+                  color: Colors.white,
+                  elevation: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top: Task Name & RFID
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                task.rFName ?? "Unnamed Task",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                "ID: ${task.rFID ?? 'N/A'}",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: statusColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Status & Application Date
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.calendar_today,
+                                  size: 14,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  appDate,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                task.rFStatusDesc ?? "Unknown",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Info Rows with Icons
+                        _buildIconInfoRow(
+                          Icons.location_city,
+                          "Governorate",
+                          task.governorateName,
+                          color: AWColors.colorDark,
+                        ),
+                        _buildIconInfoRow(
+                          Icons.apartment,
+                          "Sector",
+                          task.sectorDesc,
+                          color: AWColors.colorDark,
+                        ),
+                        _buildIconInfoRow(
+                          Icons.business,
+                          "Department",
+                          task.departmentName,
+                          color: AWColors.colorDark,
+                        ),
+                        _buildIconInfoRow(
+                          Icons.person,
+                          "Collector",
+                          task.collectorName,
+                          color: AWColors.colorDark,
+                        ),
+                        _buildIconInfoRow(
+                          Icons.person_outline,
+                          "Collector User",
+                          task.collectorUserName,
+                          color: AWColors.colorDark,
+                        ),
+                        _buildIconInfoRow(
+                          Icons.person_pin,
+                          "Owner",
+                          task.ownerUserName,
+                          color: AWColors.colorDark,
+                        ),
+                        _buildIconInfoRow(
+                          Icons.map,
+                          "Area",
+                          task.areaName,
+                          color: AWColors.colorDark,
+                        ),
+                        _buildIconInfoRow(
+                          Icons.water_drop,
+                          "Water Type",
+                          task.waterTypeName,
+                          color: AWColors.colorDark,
+                        ),
+                        _buildIconInfoRow(
+                          Icons.wb_sunny,
+                          "Weather",
+                          task.weatherDesc,
+                          color: getWeatherColor(task.weatherDesc),
+                        ),
+                        _buildIconInfoRow(
+                          task.samplingAllowed == true
+                              ? Icons.check_circle
+                              : Icons.error,
+                          "Sampling Allowed",
+                          task.samplingAllowed == true ? "Yes" : "No",
+                          color: task.samplingAllowed == true
+                              ? const Color.fromARGB(255, 14, 236, 6)
+                              : const Color.fromARGB(255, 245, 11, 69),
+                        ),
+
+                        if (task.notes != null && task.notes!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.note,
+                                  size: 20,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    task.notes!,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AWColors.colorDark,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
           }
         },
       ),
     );
   }
 
-  Widget _buildTasksList(List<TaskModel> tasks) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      itemCount: tasks.length,
-      itemBuilder: (context, index) {
-        final task = tasks[index];
-        final appDate = task.applicationDate != null
-            ? DateFormat('dd MMM yyyy, hh:mm a').format(task.applicationDate!)
-            : "N/A";
-
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+  Widget _buildIconInfoRow(
+    IconData icon,
+    String title,
+    String? value, {
+    Color? color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color ?? Colors.grey.shade700),
+          const SizedBox(width: 6),
+          Text(
+            "$title: ",
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
           ),
-          elevation: 6,
-          shadowColor: Colors.black.withOpacity(0.1),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Row: Task Name & RFID Badge
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        task.rFName ?? "Unnamed Task",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AWColors.primary,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AWColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        "ID: ${task.rFID ?? 'N/A'}",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AWColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                // Application Date & Status
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Application Date: $appDate",
-                      style: const TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: getStatusColor(task.color).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        getStatusText(task.rFStatusDesc),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: getStatusColor(task.color),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                // Additional task details from API
-                Text('Governorate: ${task.governorateName ?? "N/A"}'),
-                Text('Sector: ${task.sectorDesc ?? "N/A"}'),
-                Text('Department: ${task.departmentName ?? "N/A"}'),
-
-                if (task.notes != null && task.notes!.isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 8),
-                      const Text(
-                        "Notes:",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(task.notes!, style: const TextStyle(fontSize: 14)),
-                    ],
-                  ),
-              ],
+          Expanded(
+            child: Text(
+              value ?? "N/A",
+              style: TextStyle(fontSize: 13, color: Colors.black87),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  // Helper functions to map status id to color and text
   Color getStatusColor(String? colorHex) {
-    print(colorHex);
-    if (colorHex == null || colorHex.isEmpty) {
-      return Colors.grey; // Default color
-    }
-
+    if (colorHex == null || colorHex.isEmpty) return Colors.grey;
     try {
-      // Remove the '#' if present
       String hex = colorHex.replaceFirst('#', '');
-
-      // Ensure the hex code has 6 characters (RRGGBB)
-      if (hex.length == 6) {
-        // Add full opacity (FF) to make it 8 characters (AARRGGBB)
-        hex = 'FF$hex';
-      }
-
-      // Parse the hex string to an integer and create Color
+      if (hex.length == 6) hex = 'FF$hex';
       return Color(int.parse(hex, radix: 16));
-    } catch (e) {
-      print('Error parsing color: $colorHex, error: $e');
-      return Colors.grey; // Fallback color
+    } catch (_) {
+      return Colors.grey;
     }
   }
 
-  String getStatusText(String? rFStatusDesc) {
-    return rFStatusDesc ?? 'UnknownStatus';
-
-    // switch (rFStatusDesc) {
-    //   case "PENDING":
-    //     return "PENDING";
-    //   case "SUBMITTED":
-    //     return "RECEIVED";
-    //   case "SUBMITTED":
-    //     return "SUBMITTED";
-    //   case "APPROVED":
-    //     return "APPROVED";
-    //   case "BLOCKED":
-    //     return "BLOCKED";
-    //   case "HOLD":
-    //     return "HOLD";
-    //   default:
-    //     return "UNKNOWN";
-    // }
+  Color getWeatherColor(String? weatherDesc) {
+    switch (weatherDesc?.toLowerCase()) {
+      case "rain":
+        return Colors.blue.shade700;
+      case "dry":
+        return Colors.orange.shade600;
+      case "cloudy":
+        return Colors.grey.shade600;
+      case "storm":
+        return Colors.deepPurple.shade700;
+      default:
+        return Colors.grey;
+    }
   }
 }

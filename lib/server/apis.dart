@@ -71,7 +71,7 @@ class _Get {
         'Authorization': 'Bearer $token',
       },
     );
-    debugPrint(response.body); // raw
+    debugPrint('debugPrint ${response.body}'); // raw
 
     return response;
   }
@@ -97,6 +97,22 @@ class _Get {
     );
 
     debugPrint(response.body);
+    return response;
+  }
+
+  Future<http.Response> getColorsAndTxtStatus() async {
+    // Build the complete URL with query parameters
+    final url = Uri.parse(
+      '${Api.baseUrl}/getData?columns=RF_StatusID,RF_StatusDesc,Color&table=RF_Status',
+    );
+
+    final response = await http.get(
+      url,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    debugPrint("Color Response: ${response.body}");
+
     return response;
   }
 }

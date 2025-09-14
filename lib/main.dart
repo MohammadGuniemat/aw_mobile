@@ -12,7 +12,9 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => LangPrvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()..loadToken()),
-        ChangeNotifierProvider(create: (_) => TaskProvider()),
+        ChangeNotifierProvider(
+          create: (_) => TaskProvider()..getColorWithStatus(),
+        ),
       ],
       child: const MyApp(),
     ),
