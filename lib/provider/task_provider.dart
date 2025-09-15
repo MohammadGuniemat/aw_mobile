@@ -197,6 +197,8 @@ class TaskProvider extends ChangeNotifier {
       }
     } catch (e) {
       throw Exception('Unexpected error: $e');
+    } finally {
+      notifyListeners();
     }
   }
 }

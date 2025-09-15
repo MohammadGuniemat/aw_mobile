@@ -102,8 +102,8 @@ class UserTasks extends StatelessWidget {
                         );
                       },
                       child: Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
+                        elevation: 10,
+                        shape: BeveledRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Padding(
@@ -136,7 +136,7 @@ class UserTasks extends StatelessWidget {
                               Text(
                                 item['count']?.toString() ?? '0',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 50,
                                   fontWeight: FontWeight.w600,
                                   color: item['color'] is Color
                                       ? item['color'] as Color

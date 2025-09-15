@@ -144,7 +144,7 @@ class DashboardContent extends StatelessWidget {
                               item['icon'] is IconData
                                   ? item['icon'] as IconData
                                   : Icons.task,
-                              size: 28,
+                              size: 40,
                               color: item['color'] is Color
                                   ? item['color'] as Color
                                   : Colors.grey,
@@ -165,7 +165,7 @@ class DashboardContent extends StatelessWidget {
                             Text(
                               item['count']?.toString() ?? '0',
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: 40,
                                 fontWeight: FontWeight.w600,
                                 color: item['color'] is Color
                                     ? item['color'] as Color

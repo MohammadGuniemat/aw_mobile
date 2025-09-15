@@ -38,8 +38,8 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
       _authProvider.token!,
       widget.userId,
       widget.statusFilter,
-      1,
-      10,
+      10, //current page index
+      10, //total recordes per page
     );
   }
 
@@ -121,7 +121,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                                 "ID: ${task.rFID ?? 'N/A'}",
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: statusColor,
+                                  color: const Color.fromARGB(172, 0, 0, 0),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -162,11 +162,11 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                task.rFStatusDesc ?? "Unknown",
+                                task.rFStatusDesc ?? "Unknown Status",
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: statusColor,
+                                  color: const Color.fromARGB(172, 0, 0, 0),
                                 ),
                               ),
                             ),
@@ -176,93 +176,115 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                         const SizedBox(height: 12),
 
                         // Info Rows with Icons
-                        _buildIconInfoRow(
-                          Icons.location_city,
-                          "Governorate",
-                          task.governorateName,
-                          color: AWColors.colorDark,
-                        ),
-                        _buildIconInfoRow(
-                          Icons.apartment,
-                          "Sector",
-                          task.sectorDesc,
-                          color: AWColors.colorDark,
-                        ),
-                        _buildIconInfoRow(
-                          Icons.business,
-                          "Department",
-                          task.departmentName,
-                          color: AWColors.colorDark,
-                        ),
-                        _buildIconInfoRow(
-                          Icons.person,
-                          "Collector",
-                          task.collectorName,
-                          color: AWColors.colorDark,
-                        ),
-                        _buildIconInfoRow(
-                          Icons.person_outline,
-                          "Collector User",
-                          task.collectorUserName,
-                          color: AWColors.colorDark,
-                        ),
-                        _buildIconInfoRow(
-                          Icons.person_pin,
-                          "Owner",
-                          task.ownerUserName,
-                          color: AWColors.colorDark,
-                        ),
-                        _buildIconInfoRow(
-                          Icons.map,
-                          "Area",
-                          task.areaName,
-                          color: AWColors.colorDark,
-                        ),
-                        _buildIconInfoRow(
-                          Icons.water_drop,
-                          "Water Type",
-                          task.waterTypeName,
-                          color: AWColors.colorDark,
-                        ),
-                        _buildIconInfoRow(
-                          Icons.wb_sunny,
-                          "Weather",
-                          task.weatherDesc,
-                          color: getWeatherColor(task.weatherDesc),
-                        ),
-                        _buildIconInfoRow(
-                          task.samplingAllowed == true
-                              ? Icons.check_circle
-                              : Icons.error,
-                          "Sampling Allowed",
-                          task.samplingAllowed == true ? "Yes" : "No",
-                          color: task.samplingAllowed == true
-                              ? const Color.fromARGB(255, 14, 236, 6)
-                              : const Color.fromARGB(255, 245, 11, 69),
+                        GridView.count(
+                          crossAxisCount: 2, // 3 items per row
+                          shrinkWrap:
+                              true, // Allows GridView to size itself based on content
+                          physics:
+                              NeverScrollableScrollPhysics(), // Prevents scrolling inside parent scroll view
+                          childAspectRatio:
+                              5, // Adjust this to control width/height ratio
+                          crossAxisSpacing: 1,
+                          mainAxisSpacing: 1,
+                          children: [
+                            _buildIconInfoRow(
+                              Icons.location_city,
+                              "Governorate",
+                              task.governorateName,
+                              color: AWColors.colorDark,
+                            ),
+                            _buildIconInfoRow(
+                              Icons.apartment,
+                              "Sector",
+                              task.sectorDesc,
+                              color: AWColors.colorDark,
+                            ),
+                            _buildIconInfoRow(
+                              Icons.business,
+                              "Department",
+                              task.departmentName,
+                              color: AWColors.colorDark,
+                            ),
+                            _buildIconInfoRow(
+                              Icons.person,
+                              "Collector",
+                              task.collectorName,
+                              color: AWColors.colorDark,
+                            ),
+                            _buildIconInfoRow(
+                              Icons.person_outline,
+                              "Collector User",
+                              task.collectorUserName,
+                              color: AWColors.colorDark,
+                            ),
+                            _buildIconInfoRow(
+                              Icons.person_pin,
+                              "Owner",
+                              task.ownerUserName,
+                              color: AWColors.colorDark,
+                            ),
+                            _buildIconInfoRow(
+                              Icons.map,
+                              "Area",
+                              task.areaName,
+                              color: AWColors.colorDark,
+                            ),
+                            _buildIconInfoRow(
+                              Icons.water_drop,
+                              "Water Type",
+                              task.waterTypeName,
+                              color: AWColors.colorDark,
+                            ),
+                            _buildIconInfoRow(
+                              task.weatherDesc == 'Rain'
+                                  ? Icons.water_drop
+                                  : Icons.wb_sunny,
+                              "Weather",
+                              task.weatherDesc,
+                              color: getWeatherColor(task.weatherDesc),
+                            ),
+                            _buildIconInfoRow(
+                              task.samplingAllowed == true
+                                  ? Icons.check_circle
+                                  : Icons.error,
+                              "Sampling Allowed",
+                              task.samplingAllowed == true ? "Yes" : "No",
+                              color: task.samplingAllowed == true
+                                  ? const Color.fromARGB(255, 14, 236, 6)
+                                  : const Color.fromARGB(255, 245, 11, 69),
+                            ),
+                          ],
                         ),
 
+                        Divider(height: 20, color: Colors.grey.shade300),
+
+                        // Notes
                         if (task.notes != null && task.notes!.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(
-                                  Icons.note,
-                                  size: 20,
-                                  color: Colors.grey,
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    task.notes!,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: AWColors.colorDark,
+                            child: Container(
+                              width: double.infinity,
+                              // color: const Color.fromARGB(113, 63, 132, 145),
+                              // padding: EdgeInsets.all(10),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(
+                                    Icons.read_more,
+                                    size: 20,
+                                    color: AWColors.colorDark,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text("Note:"),
+                                  const SizedBox(width: 15),
+                                  Expanded(
+                                    child: Text(
+                                      task.notes ?? 'Note not Avaliable !',
+                                      style: const TextStyle(fontSize: 14),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                       ],
@@ -323,7 +345,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
       case "dry":
         return Colors.orange.shade600;
       case "cloudy":
-        return Colors.grey.shade600;
+        return const Color.fromARGB(255, 184, 7, 7);
       case "storm":
         return Colors.deepPurple.shade700;
       default:
