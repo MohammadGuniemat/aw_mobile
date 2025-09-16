@@ -38,7 +38,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
       _authProvider.token!,
       widget.userId,
       widget.statusFilter,
-      10, //current page index
+      1, //current page index
       10, //total recordes per page
     );
   }
@@ -85,10 +85,15 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: Colors.grey.shade300, width: 1.2),
+
+                    side: BorderSide(
+                      color: const Color.fromARGB(115, 117, 10, 138),
+                      width: 1.8,
+                    ),
                   ),
-                  color: Colors.white,
-                  elevation: 0,
+                  // color: const Color.fromARGB(132, 233, 211, 231),
+                  borderOnForeground: true,
+                  elevation: 6,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -101,6 +106,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                             Expanded(
                               child: Text(
                                 task.rFName ?? "Unnamed Task",
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -230,10 +236,14 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                               color: AWColors.colorDark,
                             ),
                             _buildIconInfoRow(
-                              Icons.water_drop,
+                              task.waterTypeName == 'مياه شرب'
+                                  ? Icons.water_drop
+                                  : Icons.fire_truck,
                               "Water Type",
                               task.waterTypeName,
-                              color: AWColors.colorDark,
+                              color: task.waterTypeName == 'مياه شرب'
+                                  ? Color.fromARGB(255, 10, 112, 138)
+                                  : Color.fromARGB(255, 245, 79, 2),
                             ),
                             _buildIconInfoRow(
                               task.weatherDesc == 'Rain'
@@ -259,7 +269,8 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                         Divider(height: 20, color: Colors.grey.shade300),
 
                         // Notes
-                        if (task.notes != null && task.notes!.isNotEmpty)
+                        // if (task.notes != null && task.notes!.isNotEmpty)
+                        if (true)
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Container(
@@ -310,11 +321,20 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
       child: Row(
         children: [
           Icon(icon, size: 18, color: color ?? Colors.grey.shade700),
-          const SizedBox(width: 6),
+
+          // const SizedBox(width: 2),
+          const SizedBox(width: 20),
           Text(
             "$title: ",
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 13,
+              // fontWeight: FontWeight.w600,
+              color: title == 'Sector'
+                  ? const Color.fromARGB(255, 1, 100, 250)
+                  : const Color.fromARGB(255, 20, 20, 20),
+            ),
           ),
+
           Expanded(
             child: Text(
               value ?? "N/A",
