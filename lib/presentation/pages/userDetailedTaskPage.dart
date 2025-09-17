@@ -1,3 +1,5 @@
+import 'package:aw_app/models/formSampleUpdate.dart';
+import 'package:aw_app/presentation/widgets/modalWidget.dart';
 import 'package:aw_app/provider/auth_provider.dart';
 import 'package:aw_app/provider/task_provider.dart';
 import 'package:flutter/material.dart';
@@ -103,6 +105,34 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            ElevatedButton(
+                              onPressed: () async {
+                                final result = await showDialog<FormSampleUpdate>(
+                                  context: context,
+                                  barrierColor: Colors.black.withOpacity(0.5),
+                                  builder: (context) {
+                                    return Dialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child:
+                                          const ModalWidget(), // your form widget
+                                    );
+                                  },
+                                );
+
+                                if (result != null) {
+                                  // ✅ Got the data back from form
+                                  print("Batch No: ${result.batchNo}");
+                                }
+                              },
+                              child: const Text('Open Form'),
+                            ),
+                            Text(
+                              'MUST IMPLEMENT PAGINATION',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 task.rFName ?? "Unnamed Task",
@@ -329,9 +359,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
             style: TextStyle(
               fontSize: 13,
               // fontWeight: FontWeight.w600,
-              color: title == 'Sector'
-                  ? const Color.fromARGB(255, 1, 100, 250)
-                  : const Color.fromARGB(255, 20, 20, 20),
+              color: const Color.fromARGB(255, 20, 20, 20),
             ),
           ),
 
