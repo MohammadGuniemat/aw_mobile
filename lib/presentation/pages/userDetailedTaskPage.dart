@@ -1,4 +1,5 @@
 import 'package:aw_app/models/formSampleUpdate.dart';
+import 'package:aw_app/presentation/pages/formMoreDetails.dart';
 import 'package:aw_app/presentation/widgets/modalWidget.dart';
 import 'package:aw_app/provider/auth_provider.dart';
 import 'package:aw_app/provider/task_provider.dart';
@@ -8,11 +9,29 @@ import 'package:aw_app/models/taskModel.dart';
 import 'package:aw_app/core/theme/colors.dart';
 import 'package:provider/provider.dart';
 
+final simulatedSample = FormSampleUpdate.fromJson({
+  "BatchNo": "B1",
+  "DepartmentID": 0,
+  "Notes": "",
+  "RFID": 1435,
+  "SampleStatus": "COLLECTED",
+  "SampleStatusOwner": 1038,
+  "SectorID": 0,
+  "StatusID": 0,
+  "WeatherID": 0,
+  "analysisTypeIDs": {},
+  "location": "محطة تحلية قطر",
+  "sample_WaterSourceTypeID": 5,
+  "sub_location": "Product",
+});
+
 class UserDetailedTasksPage extends StatefulWidget {
+  // Simulated API response mapped to your model
+
   final int userId;
   final String statusFilter;
 
-  const UserDetailedTasksPage({
+  UserDetailedTasksPage({
     Key? key,
     required this.userId,
     required this.statusFilter,
@@ -107,24 +126,12 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                           children: [
                             ElevatedButton(
                               onPressed: () async {
-                                final result = await showDialog<FormSampleUpdate>(
-                                  context: context,
-                                  barrierColor: Colors.black.withOpacity(0.5),
-                                  builder: (context) {
-                                    return Dialog(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child:
-                                          const ModalWidget(), // your form widget
-                                    );
-                                  },
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FormMoreDetails(prefillData: simulatedSample),                              ),
+                                
                                 );
-
-                                if (result != null) {
-                                  // ✅ Got the data back from form
-                                  print("Batch No: ${result.batchNo}");
-                                }
                               },
                               child: const Text('Open Form'),
                             ),
