@@ -115,8 +115,45 @@ class _Get {
 
     return response;
   }
+
+  // GET LIST OF FORM SAMPLES
+
+  // http://10.10.15.21:3003/api/samples/1438
+
+  Future<http.Response> getListOfFormSamples(String token, int RF_id) async {
+    // Build the complete URL with query parameters
+    final url = Uri.parse('${Api.baseUrl}/samples/$RF_id');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    debugPrint("List Of Form $RF_id Samples  Response: ${response.body}");
+
+    return response;
+  }
+
+  Future<http.Response> getAnalysisType(String token, int sampleID) async {
+    final url = Uri.parse('${Api.baseUrl}analysisTypes/$sampleID');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    debugPrint('analysis type fetched : ${response.body}'); // raw
+
+    return response;
+  }
 }
 
+//////////////////////////////////////////// PUT ///////////////////////
 class _Put {
   Future<http.Response> updateUserInfo(
     String token,

@@ -2,6 +2,7 @@ import 'package:aw_app/models/formSampleUpdate.dart';
 import 'package:aw_app/presentation/pages/formMoreDetails.dart';
 import 'package:aw_app/presentation/widgets/modalWidget.dart';
 import 'package:aw_app/provider/auth_provider.dart';
+import 'package:aw_app/provider/samplesProvider.dart';
 import 'package:aw_app/provider/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -9,21 +10,21 @@ import 'package:aw_app/models/taskModel.dart';
 import 'package:aw_app/core/theme/colors.dart';
 import 'package:provider/provider.dart';
 
-final simulatedSample = FormSampleUpdate.fromJson({
-  "BatchNo": "B1",
-  "DepartmentID": 0,
-  "Notes": "",
-  "RFID": 1435,
-  "SampleStatus": "COLLECTED",
-  "SampleStatusOwner": 1038,
-  "SectorID": 0,
-  "StatusID": 0,
-  "WeatherID": 0,
-  "analysisTypeIDs": {},
-  "location": "محطة تحلية قطر",
-  "sample_WaterSourceTypeID": 5,
-  "sub_location": "Product",
-});
+// final simulatedSample = FormSampleUpdate.fromJson({
+//   "BatchNo": "B1",
+//   "DepartmentID": 0,
+//   "Notes": "",
+//   "RFID": 1435,
+//   "SampleStatus": "COLLECTED",
+//   "SampleStatusOwner": 1038,
+//   "SectorID": 0,
+//   "StatusID": 0,
+//   "WeatherID": 0,
+//   "analysisTypeIDs": {},
+//   "location": "محطة تحلية قطر",
+//   "sample_WaterSourceTypeID": 5,
+//   "sub_location": "Product",
+// });
 
 class UserDetailedTasksPage extends StatefulWidget {
   // Simulated API response mapped to your model
@@ -45,12 +46,14 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
   late Future<List<TaskModel>> _tasksFuture;
   late TaskProvider _taskProvider;
   late AuthProvider _authProvider;
+  late SamplesProvider _samplesProvider;
 
   @override
   void initState() {
     super.initState();
     _taskProvider = context.read<TaskProvider>();
     _authProvider = context.read<AuthProvider>();
+    _samplesProvider = context.read<SamplesProvider>();
     _loadTasks();
   }
 
@@ -63,6 +66,31 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
       10, //total recordes per page
     );
   }
+
+  // void _loadSampleListForForm(int RFID) {
+  //   _samplesProvider.setListOfFormSamples(_authProvider.token!, RFID);
+
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(builder: (context) => FormMoreDetails()),
+  //   );
+  // }
+
+  void _loadSampleListForForm(int rfid) async {
+    await _samplesProvider.setListOfFormSamples(_authProvider.token!, rfid);
+    print("✅ Samples fetched, navigating to FormMoreDetails...");
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const FormMoreDetails()),
+      );
+    }
+  }
+
+  // String _sampleGettingMS() {
+  //   return _samplesProvider.getSampleProviderMsg;
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +105,12 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
       body: FutureBuilder<List<TaskModel>>(
         future: _tasksFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          // Get isLoading reactively
+          final isLoading = context.select<SamplesProvider, bool>(
+            (provider) => provider.isSampleLoading,
+          );
+          if (snapshot.connectionState == ConnectionState.waiting ||
+              isLoading) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -125,19 +158,36 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             ElevatedButton(
-                              onPressed: () async {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => FormMoreDetails(prefillData: simulatedSample),                              ),
-                                
-                                );
+                              // token and RFID are in the caleed function body
+                              onPressed: () => {
+                                _loadSampleListForForm(task.rFID!),
                               },
-                              child: const Text('Open Form'),
+                              child: const Text(
+                                'EDIT',
+                                style: TextStyle(color: Colors.blue),
+                              ),
                             ),
-                            Text(
-                              'MUST IMPLEMENT PAGINATION',
-                              style: TextStyle(color: Colors.red),
+                            Column(
+                              children: [
+                                // Text(
+                                //   'MUST IMPLEMENT PAGINATION',
+                                //   style: TextStyle(color: Colors.red),
+                                // ),
+
+                                // Selector<SamplesProvider, String>(
+                                //   selector: (context, provider) =>
+                                //       provider.sampleProviderMsg,
+                                //   builder: (context, message, child) {
+                                //     return Text(
+                                //       message ?? 'Getting Samples List ...',
+                                //     );
+                                //   },
+                                // ),
+                                // Text(
+                                //   _sampleGettingMS(),
+                                //   style: TextStyle(color: Colors.red),
+                                // ),
+                              ],
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -248,21 +298,21 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                               task.departmentName,
                               color: AWColors.colorDark,
                             ),
-                            _buildIconInfoRow(
-                              Icons.person,
-                              "Collector",
-                              task.collectorName,
-                              color: AWColors.colorDark,
-                            ),
-                            _buildIconInfoRow(
-                              Icons.person_outline,
-                              "Collector User",
-                              task.collectorUserName,
-                              color: AWColors.colorDark,
-                            ),
+                            // _buildIconInfoRow(
+                            //   Icons.person,
+                            //   "Collector",
+                            //   task.collectorName,
+                            //   color: AWColors.colorDark,
+                            // ),
+                            // _buildIconInfoRow(
+                            //   Icons.person_outline,
+                            //   "Collector User",
+                            //   task.collectorUserName,
+                            //   color: AWColors.colorDark,
+                            // ),
                             _buildIconInfoRow(
                               Icons.person_pin,
-                              "Owner",
+                              "Assigned By",
                               task.ownerUserName,
                               color: AWColors.colorDark,
                             ),

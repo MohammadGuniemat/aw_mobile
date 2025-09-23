@@ -70,14 +70,8 @@ class UserTasks extends StatelessWidget {
               ? Center(child: Text(taskProvider.error))
               : tasksCounts.isEmpty
               ? const Center(child: Text("No tasks found"))
-              : GridView.builder(
+              : ListView.builder(
                   padding: const EdgeInsets.all(12),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 1.0,
-                  ),
                   itemCount: tasksCounts.length,
                   itemBuilder: (context, index) {
                     final item = tasksCounts.values.toList()[index];
@@ -101,50 +95,72 @@ class UserTasks extends StatelessWidget {
                           ),
                         );
                       },
-                      child: Card(
-                        elevation: 10,
-                        shape: BeveledRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                item['icon'] is IconData
-                                    ? item['icon'] as IconData
-                                    : Icons.task,
-                                size: 28,
-                                color: item['color'] is Color
-                                    ? item['color'] as Color
-                                    : Colors.grey,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Icon
+                            Icon(
+                              item['icon'] is IconData
+                                  ? item['icon'] as IconData
+                                  : Icons.task,
+                              size: 28,
+                              color: item['color'] is Color
+                                  ? item['color'] as Color
+                                  : Colors.grey,
+                            ),
+
+                            // Description
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
                               ),
-                              const SizedBox(height: 6),
-                              Text(
+                              child: Text(
                                 item['desc']?.toString() ?? '',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                   color: item['color'] is Color
                                       ? item['color'] as Color
                                       : Colors.grey,
                                 ),
-                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item['count']?.toString() ?? '0',
-                                style: TextStyle(
-                                  fontSize: 50,
-                                  fontWeight: FontWeight.w600,
-                                  color: item['color'] is Color
-                                      ? item['color'] as Color
-                                      : Colors.grey,
+                            ),
+
+                            // Count
+                            Row(
+                              children: [
+                                Text(
+                                  item['count']?.toString() ?? '0',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w600,
+                                    color: item['color'] is Color
+                                        ? item['color'] as Color
+                                        : Colors.grey,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                                SizedBox(width: 20),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -152,10 +168,10 @@ class UserTasks extends StatelessWidget {
                 ),
         ),
 
-        FloatingActionButton(
-          onPressed: () => {taskProvider.getColorWithStatus()},
-          child: Text('Get user approved tasks'),
-        ),
+        // FloatingActionButton(
+        //   onPressed: () => {taskProvider.getColorWithStatus()},
+        //   child: Text('Get user approved tasks'),
+        // ),
       ],
     );
   }
