@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 class TaskProvider extends ChangeNotifier {
   List<TaskModel> _tasks = [];
+  List<TaskModel> DetailedTasks = [];
   List<TaskConfigModel> _tasksConfigs = [];
   Map<int, Map<String, dynamic>> _tasksCounts = {};
   bool _isLoading = false;
@@ -64,11 +65,19 @@ class TaskProvider extends ChangeNotifier {
 
     try {
       final response = await Api.get.userTasks(token, userId);
+
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
         final taskList = data['tasks']?['recordset'] as List<dynamic>? ?? [];
         _tasks = taskList.map((e) => TaskModel.fromJson(e)).toList();
+
+        // Print each task to the console
+        for (var task in _tasks) {
+          print(
+            'taskQ ${task}',
+          ); // Make sure TaskModel has a meaningful toString() method
+        }
 
         _error = '';
 
@@ -186,6 +195,7 @@ class TaskProvider extends ChangeNotifier {
 
         if (data['success'] == true) {
           final List<dynamic> tasksData = data['data'];
+          DetailedTasks=tasksData.map((t) => TaskModel.fromJson(t)).toList();
           return tasksData.map((t) => TaskModel.fromJson(t)).toList();
         } else {
           throw Exception('API Error: ${data['error']}');

@@ -30,6 +30,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> loadToken() async {
+    print("load token");
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('token');
     if (_token != null) {

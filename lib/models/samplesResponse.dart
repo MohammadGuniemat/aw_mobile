@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 class SamplesResponse {
   final int sampleID;
-  final int rfid;
+  final int rfid;//from form
   final String sampleStatus;
   final int waterSourceTypeID;
   final String location;

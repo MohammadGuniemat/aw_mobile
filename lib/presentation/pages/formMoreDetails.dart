@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:aw_app/core/theme/colors.dart';
 import 'package:aw_app/models/samplesResponse.dart' show SamplesResponse;
 import 'package:aw_app/models/WaterSourceTypeModel.dart' show WaterSourceType;
+import 'package:aw_app/presentation/pages/InsertSamplePage.dart';
 import 'package:aw_app/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -11,7 +12,9 @@ import 'package:aw_app/server/apis.dart';
 import 'package:intl/intl.dart';
 
 class FormMoreDetails extends StatelessWidget {
-  const FormMoreDetails({super.key});
+  final int rfid;
+
+  const FormMoreDetails({required this.rfid, super.key});
 
   // Get color based on status
   Color getStatusColor(String status) {
@@ -48,6 +51,19 @@ class FormMoreDetails extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            iconSize: 40,
+            tooltip: 'Add Sample',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => InsertSamplePage(rfid:rfid)),
+              );
+            },
+          ),
+        ],
         // centerTitle: true,
         elevation: 4,
 

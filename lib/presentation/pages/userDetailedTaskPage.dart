@@ -83,7 +83,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
     if (mounted) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const FormMoreDetails()),
+        MaterialPageRoute(builder: (context) => FormMoreDetails(rfid: rfid)),
       );
     }
   }
