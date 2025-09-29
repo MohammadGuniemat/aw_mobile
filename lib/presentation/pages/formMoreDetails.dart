@@ -3,6 +3,7 @@ import 'package:aw_app/core/theme/colors.dart';
 import 'package:aw_app/models/samplesResponse.dart' show SamplesResponse;
 import 'package:aw_app/models/WaterSourceTypeModel.dart' show WaterSourceType;
 import 'package:aw_app/presentation/pages/InsertSamplePage.dart';
+import 'package:aw_app/presentation/pages/ViewSamplePage.dart';
 import 'package:aw_app/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -59,7 +60,9 @@ class FormMoreDetails extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => InsertSamplePage(rfid:rfid)),
+                MaterialPageRoute(
+                  builder: (context) => InsertSamplePage(rfid: rfid),
+                ),
               );
             },
           ),

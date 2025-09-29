@@ -1,3 +1,4 @@
+import 'package:aw_app/models/dataStaticModel/User.dart';
 import 'package:flutter/foundation.dart';
 import 'package:aw_app/server/ApiService.dart';
 // Import all your models
@@ -15,6 +16,7 @@ import 'package:aw_app/models/dataStaticModel/WaterSourceName.dart';
 // import 'package:aw_app/models/dataStaticModel/WaterSourceType.dart';
 import 'package:aw_app/models/dataStaticModel/WaterType.dart';
 import 'package:aw_app/models/dataStaticModel/weather.dart';
+import 'package:aw_app/models/dataStaticModel/FormWaterSourceType.dart';
 import 'package:flutter/material.dart';
 
 class DataProvider with ChangeNotifier {
@@ -22,7 +24,7 @@ class DataProvider with ChangeNotifier {
   List<AnalysisType> _analysisTypes = [];
   List<Area> _areas = [];
   List<Department> _departments = [];
-  List<WaterSourceType> _formWaterSourceTypes = [];
+  List<FormWaterSourceType> _formWaterSourceTypes = [];
   List<Governorate> _governorates = [];
   List<MethodUsed> _methodUsed = [];
   List<RFStatus> _rfStatus = [];
@@ -33,6 +35,7 @@ class DataProvider with ChangeNotifier {
   List<WaterSourceType> _waterSourceTypes = [];
   List<WaterType> _waterTypes = [];
   List<Weather> _weather = [];
+  List<User> _users = [];
 
   // State variables
   bool _isLoading = false;
@@ -43,7 +46,7 @@ class DataProvider with ChangeNotifier {
   List<AnalysisType> get analysisTypes => _analysisTypes;
   List<Area> get areas => _areas;
   List<Department> get departments => _departments;
-  List<WaterSourceType> get formWaterSourceTypes => _formWaterSourceTypes;
+  List<FormWaterSourceType> get formWaterSourceTypes => _formWaterSourceTypes;
   List<Governorate> get governorates => _governorates;
   List<MethodUsed> get methodUsed => _methodUsed;
   List<RFStatus> get rfStatus => _rfStatus;
@@ -54,6 +57,7 @@ class DataProvider with ChangeNotifier {
   List<WaterSourceType> get waterSourceTypes => _waterSourceTypes;
   List<WaterType> get waterTypes => _waterTypes;
   List<Weather> get weather => _weather;
+  List<User> get users => _users;
 
   // State getters
   bool get isLoading => _isLoading;
@@ -90,6 +94,15 @@ class DataProvider with ChangeNotifier {
       final allData = await ApiService.fetchAllData();
       print("Data fetched successfully from API.");
 
+      // Debug: print allData
+      print("users: List of ${_users.length} items");
+      if (_users.isNotEmpty) {
+        final firstUser = _users.first;
+        print(
+          " - First user: id=${firstUser.userId}, name=${firstUser.userName}, role=${firstUser.role}",
+        );
+      }
+
       // Update all data lists with debug prints
       _analysisTypes = allData['analysisTypes'] as List<AnalysisType>;
       print("Loaded analysisTypes: ${_analysisTypes.length}");
@@ -101,7 +114,7 @@ class DataProvider with ChangeNotifier {
       print("Loaded departments: ${_departments.length}");
 
       _formWaterSourceTypes =
-          allData['formWaterSourceTypes'] as List<WaterSourceType>;
+          allData['formWaterSourceTypes'] as List<FormWaterSourceType>;
       print("Loaded formWaterSourceTypes: ${_formWaterSourceTypes.length}");
 
       _governorates = allData['governorates'] as List<Governorate>;
@@ -133,6 +146,9 @@ class DataProvider with ChangeNotifier {
 
       _weather = allData['weather'] as List<Weather>;
       print("Loaded weather: ${_weather.length}");
+
+      _users = allData['users'] as List<User>;
+      print("Loaded Users: ${_users.length}");
 
       _isInitialized = true;
       _error = '';
@@ -187,6 +203,16 @@ class DataProvider with ChangeNotifier {
     }
   }
 
+    FormWaterSourceType? findWaterFormSourceTypeById(int? fId) {
+    try {
+      return _formWaterSourceTypes.firstWhere(
+        (type) => type.rfid == fId,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
   WaterSourceName? findWaterSourceNameById(int nameId) {
     try {
       return _waterSourceNames.firstWhere(
@@ -210,6 +236,16 @@ class DataProvider with ChangeNotifier {
 
     try {
       return _weather.firstWhere((s) => s.weatherID == wID);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  User? getUserById(int? user_id) {
+    print("🔎 getUserById called with: $user_id (${user_id.runtimeType})");
+
+    try {
+      return _users.firstWhere((s) => s.userId == user_id);
     } catch (e) {
       return null;
     }
