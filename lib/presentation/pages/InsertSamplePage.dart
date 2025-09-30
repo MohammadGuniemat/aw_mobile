@@ -1,10 +1,12 @@
 import 'dart:typed_data';
 import 'package:aw_app/core/theme/colors.dart';
 import 'package:aw_app/models/dataStaticModel/WaterSourceName.dart';
+import 'package:aw_app/presentation/widgets/analysisTypesWidget.dart';
+import 'package:aw_app/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:aw_app/models/SamplesResponse.dart';
+import 'package:aw_app/models/InsertSampleModel.dart';
 import 'package:aw_app/provider/data_provider.dart';
 import 'package:aw_app/provider/samplesProvider.dart';
 import 'package:aw_app/core/constants/SampleStatus.dart';
@@ -24,17 +26,21 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
   final _formKey = GlobalKey<FormState>();
   TaskModel? task;
 
-  String? form_location;
   String? form_batchNo;
+  String? form_notes;
+  //int rfid
   String? form_sampleStatus;
   int? form_sampleStatusOwner;
-  int? form_waterSourceTypeID;
+  Map<String, dynamic>? form_analysisTypeIDs;
+  String? form_location;
+  int? form_sampleWaterSourceTypeID;
+  int? form_samplewaterSourceNameID; //Optional for further waterSourceNameID
   String? form_subLocation;
-  String? form_sampleDatetime;
-  String? form_sampleAnalyseDatetime;
-  Uint8List? form_sampleImageBytes;
 
-  final ImagePicker _picker = ImagePicker();
+  // using for sub test renderer
+  List<int> selectedAnalysisType = [];
+
+  // final ImagePicker _picker = ImagePicker();
   late TextEditingController notesController;
 
   @override
@@ -49,37 +55,48 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
       setState(() {
         task = foundTask;
         notesController.text = task?.notes ?? '';
+        form_notes = task?.notes ?? '';
       });
     });
   }
 
-  Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
-    if (image != null) {
-      final bytes = await image.readAsBytes();
-      setState(() => form_sampleImageBytes = bytes);
-    }
-  }
+  // Future<void> _pickImage() async {
+  //   final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+  //   if (image != null) {
+  //     final bytes = await image.readAsBytes();
+  //     setState(() => form_sampleImageBytes = bytes);
+  //   }
+  // }
 
   void _submit(BuildContext context) {
+    final authProvider = context.read<AuthProvider>();
+    form_sampleStatusOwner = authProvider.userID ?? -11;
+
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      final sample = SamplesResponse(
-        sampleID: 0,
+      final sample = InsertSampleModel(
+        batchNo: form_batchNo ?? 'N/A',
+        notes: form_notes ?? '',
         rfid: widget.rfid,
         sampleStatus: form_sampleStatus ?? 'N/A',
-        waterSourceTypeID: form_waterSourceTypeID ?? 0,
-        location: form_location ?? 'N/A',
-        sampleDatetime: form_sampleDatetime,
-        batchNo: form_batchNo ?? 'N/A',
         sampleStatusOwner: form_sampleStatusOwner ?? 0,
+        analysisTypeIDs: form_analysisTypeIDs ?? {},
+        location: form_location ?? 'N/A',
+        sampleWaterSourceTypeID: form_sampleWaterSourceTypeID ?? 0,
         subLocation: form_subLocation ?? 'N/A',
-        sampleImageBytes: form_sampleImageBytes,
-        sampleAnalyseDatetime: form_sampleAnalyseDatetime,
       );
 
+      // Convert to Map
+      final sampleMap = sample.toJson();
+
+      // Loop through key-value pairs
+      sampleMap.forEach((key, value) {
+        print("$key is Key : Value is $value");
+      });
+
       final samplesProvider = context.read<SamplesProvider>();
+
       // samplesProvider.insertSample(sample);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -145,6 +162,8 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
     final formWaterSourceType = dataProvider
         .findWaterFormSourceTypeById(task!.rFID)
         ?.waterSourceTypeID;
+    // fill the form record
+    form_sampleWaterSourceTypeID = formWaterSourceType;
     final selectedWaterSourceName =
         dataProvider.waterSourceTypes
             .firstWhereOrNull(
@@ -154,6 +173,18 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
         "Not Found";
     final user = dataProvider.getUserById(task!.collectorID)?.userName;
     final notes = task?.notes ?? '';
+
+    final listOfwaterSourceName = dataProvider.waterSourceNames
+        .where(
+          (w) =>
+              w.waterSourceTypeID == formWaterSourceType &&
+              w.areaID == task!.areaID,
+        )
+        // .map((w) => w.waterSourceName)
+        .toList();
+    print(
+      "listOfwaterSourceName: ${listOfwaterSourceName.toString()}",
+    ); // will print list of strings
 
     return Scaffold(
       appBar: AppBar(
@@ -220,22 +251,23 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
 
                       DropdownButtonFormField<int>(
                         decoration: const InputDecoration(
-                          labelText: "Water Source Type *",
+                          labelText: "Water Source Name *",
                           border: OutlineInputBorder(),
                           filled: true,
                           fillColor: Colors.white,
                         ),
-                        items: dataProvider.waterSourceTypes
+                        items: listOfwaterSourceName
                             .map(
                               (w) => DropdownMenuItem(
-                                value: w.waterSourceTypeID,
-                                child: Text(w.waterSourceTypesName),
+                                value: w.waterSourceNameID,
+                                child: Text(w.waterSourceName),
+                                // child: Text(w.waterSourceNameID.toString()),
                               ),
                             )
                             .toList(),
-                        onChanged: (val) => form_waterSourceTypeID = val,
+                        onChanged: (val) => form_samplewaterSourceNameID = val,
                         validator: (val) => val == null ? "Required" : null,
-                        onSaved: (val) => form_waterSourceTypeID = val,
+                        onSaved: (val) => form_samplewaterSourceNameID = val,
                       ),
 
                       const SizedBox(height: 16),
@@ -278,7 +310,7 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
 
                       const SizedBox(height: 16),
 
-                      TextField(
+                      TextFormField(
                         controller: notesController,
                         decoration: const InputDecoration(
                           labelText: "Additional Notes",
@@ -287,75 +319,72 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                           fillColor: Colors.white,
                           alignLabelWithHint: true,
                         ),
+                        onSaved: (val) => form_notes = val,
+
                         maxLines: 3,
                       ),
 
                       const SizedBox(height: 20),
 
-                      Text(
-                        "Sample Status *",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          filled: true,
-                          fillColor: Colors.white,
-                        ),
-                        items: Samplestatus.sampleStatusList
+                      //Test Types
+                      DropdownMenu<int>(
+                        width: 300,
+                        label: const Text("Select Analysis Type"),
+                        dropdownMenuEntries: dataProvider.analysisTypes
                             .map(
-                              (status) => DropdownMenuItem(
-                                value: status,
-                                child: Text(status),
+                              (type) => DropdownMenuEntry<int>(
+                                value: type.analysisTypeID,
+                                label: type.analysisTypeDesc,
                               ),
                             )
                             .toList(),
-                        onChanged: (val) => form_sampleStatus = val,
-                        validator: (val) => val == null ? "Required" : null,
-                        onSaved: (val) => form_sampleStatus = val,
+                        onSelected: (value) {
+                          print("Selected AnalysisType ID: $value");
+                          print(
+                            "http://10.10.15.21:3003/api/subtests/$formWaterSourceType/$value ",
+                          );
+                          setState(() {
+                            // update some state variable instead of calling build()
+                            selectedAnalysisType.add(value!);
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 20),
+
+                      if (selectedAnalysisType.contains(1))
+                        AnalysisTypesWidget(
+                          analysisId: 1,
+                          w_type: formWaterSourceType,
+                        ),
+                      if (selectedAnalysisType.contains(2))
+                        AnalysisTypesWidget(
+                          analysisId: 2,
+                          w_type: formWaterSourceType,
+                        ),
+                      if (selectedAnalysisType.contains(3))
+                        AnalysisTypesWidget(
+                          analysisId: 3,
+                          w_type: formWaterSourceType,
+                        ),
+                      const SizedBox(height: 20),
+
+                      DropdownMenu<String>(
+                        width: 300,
+                        label: const Text("Sample Status"),
+                        dropdownMenuEntries: Samplestatus.sampleStatusList
+                            .map(
+                              (status) => DropdownMenuEntry<String>(
+                                value: status,
+                                label: status,
+                              ),
+                            )
+                            .toList(),
+                        onSelected: (val) {
+                          form_sampleStatus = val;
+                        },
                       ),
 
                       const SizedBox(height: 20),
-
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _pickImage,
-                              icon: const Icon(Icons.camera_alt),
-                              label: const Text("Take Photo"),
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                backgroundColor: Colors.green[50],
-                                foregroundColor: Colors.green[800],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          if (form_sampleImageBytes != null)
-                            Expanded(
-                              child: Container(
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.green),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Image.memory(form_sampleImageBytes!),
-                              ),
-                            ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 24),
 
                       SizedBox(
                         width: double.infinity,

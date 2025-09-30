@@ -59,6 +59,23 @@ class _Get {
     return response;
   }
 
+  // Get SubTests For Analysis Type ID
+
+  Future<http.Response> getSubTests(String token, String endPoint) async {
+    final url = Uri.parse('${Api.baseUrl}$endPoint');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    e debugPrint(response.body); // raw
+
+    return response;
+  }
+
   // GET SPECIFIC USER TASKS -ALL OF THEM
 
   Future<http.Response> userTasks(String token, int userId) async {
