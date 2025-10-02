@@ -3,7 +3,7 @@ import 'package:aw_app/core/theme/colors.dart';
 import 'package:aw_app/models/samplesResponse.dart' show SamplesResponse;
 import 'package:aw_app/models/WaterSourceTypeModel.dart' show WaterSourceType;
 import 'package:aw_app/presentation/pages/InsertSamplePage.dart';
-import 'package:aw_app/presentation/pages/ViewSamplePage.dart';
+import 'package:aw_app/presentation/pages/EditSamplePage.dart';
 import 'package:aw_app/provider/auth_provider.dart';
 import 'package:aw_app/provider/task_provider.dart';
 import 'package:flutter/material.dart';
@@ -160,6 +160,22 @@ class FormMoreDetails extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                Text(sample.sampleID.toString()),
+                                IconButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            EditSamplePage(rfid: rfid),
+                                      ),
+                                    );
+                                  },
+                                  color: const Color.fromARGB(255, 51, 243, 33),
+                                  icon: Icon(
+                                    Icons.edit,
+                                  ), // Fixed: Added 'Icon' constructor
+                                ),
                                 Text(
                                   "No# ${index + 1}",
                                   style: const TextStyle(
