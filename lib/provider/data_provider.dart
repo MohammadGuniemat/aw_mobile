@@ -116,6 +116,7 @@ class DataProvider with ChangeNotifier {
       _formWaterSourceTypes =
           allData['formWaterSourceTypes'] as List<FormWaterSourceType>;
       print("Loaded formWaterSourceTypes: ${_formWaterSourceTypes.length}");
+      print("Loaded 1st formWaterSourceTypes: ${_formWaterSourceTypes.first}");
 
       _governorates = allData['governorates'] as List<Governorate>;
       print("Loaded governorates: ${_governorates.length}");
@@ -203,11 +204,19 @@ class DataProvider with ChangeNotifier {
     }
   }
 
-    FormWaterSourceType? findWaterFormSourceTypeById(int? fId) {
+  FormWaterSourceType? findWaterFormSourceTypeById(int? fId) {
     try {
-      return _formWaterSourceTypes.firstWhere(
-        (type) => type.rfid == fId,
-      );
+      return _formWaterSourceTypes.firstWhere((type) => type.rfid == fId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // return List of of Form WaterSource Type ID
+
+  List<FormWaterSourceType>? findListOfWaterFormSourceTypeById(int? fId) {
+    try {
+      return _formWaterSourceTypes.where((type) => type.rfid == fId).toList();
     } catch (e) {
       return null;
     }
@@ -281,6 +290,12 @@ class DataProvider with ChangeNotifier {
   String getWaterSourceTypeName(int typeId) {
     final type = findWaterSourceTypeById(typeId);
     return type?.waterSourceTypesName ?? 'Unknown';
+  }
+
+  String getAnalysisTypeId(int typeId) {
+    return _analysisTypes
+        .firstWhere((source) => source.analysisTypeID == typeId)
+        .analysisTypeDesc;
   }
 
   // Get filtered lists

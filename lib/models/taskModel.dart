@@ -190,8 +190,8 @@ class TaskModel {
     };
   }
 
-  @override
-  String toString() {
-    return 'TaskModel{RFID: $rFID, RFName: $rFName, Governorate: $governorateName, Status: $rFStatusDesc}';
-  }
+  // @override
+  // String toString() {
+  //   return 'TaskModel{RFID: $rFID, RFName: $rFName, Governorate: $governorateName, Status: $rFStatusDesc}';
+  // }
 }

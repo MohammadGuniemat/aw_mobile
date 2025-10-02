@@ -4,7 +4,7 @@ class InsertSampleModel {
   final int rfid;
   final String sampleStatus;
   final int sampleStatusOwner;
-  final Map<String, dynamic> analysisTypeIDs; // since it's {}
+  final Map<int, Map<int, String>> analysisTypeIDs; // since it's {}
   final String location;
   final int sampleWaterSourceTypeID;
   final String subLocation;
@@ -44,7 +44,12 @@ class InsertSampleModel {
       'RFID': rfid,
       'SampleStatus': sampleStatus,
       'SampleStatusOwner': sampleStatusOwner,
-      'analysisTypeIDs': analysisTypeIDs,
+      'analysisTypeIDs': analysisTypeIDs.map(
+        (k, v) => MapEntry(
+          k.toString(),
+          v.map((k2, v2) => MapEntry(k2.toString(), v2)),
+        ),
+      ),
       'location': location,
       'sample_WaterSourceTypeID': sampleWaterSourceTypeID,
       'sub_location': subLocation,

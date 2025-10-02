@@ -195,7 +195,8 @@ class TaskProvider extends ChangeNotifier {
 
         if (data['success'] == true) {
           final List<dynamic> tasksData = data['data'];
-          DetailedTasks=tasksData.map((t) => TaskModel.fromJson(t)).toList();
+          print('tasksData22 $tasksData');
+          DetailedTasks = tasksData.map((t) => TaskModel.fromJson(t)).toList();
           return tasksData.map((t) => TaskModel.fromJson(t)).toList();
         } else {
           throw Exception('API Error: ${data['error']}');

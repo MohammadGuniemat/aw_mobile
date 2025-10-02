@@ -28,6 +28,29 @@ class _Post {
     print(response);
     return response;
   }
+
+  // ✅ Insert Sample
+  Future<http.Response> insertSample(
+    String token,
+    Map<String, dynamic> sampleData,
+  ) async {
+    final url = Uri.parse('${Api.baseUrl}insertSample');
+    print("📤 Insert Sample URL: $url");
+    print("📦 Payload: ${jsonEncode(sampleData)}");
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token', // optional if backend requires auth
+      },
+      body: jsonEncode(sampleData),
+    );
+
+    print("📩 Response status: ${response.statusCode}");
+    print("📜 Response body: ${response.body}");
+    return response;
+  }
 }
 
 class _Get {
@@ -71,7 +94,7 @@ class _Get {
         'Authorization': 'Bearer $token',
       },
     );
-    e debugPrint(response.body); // raw
+    debugPrint(response.body); // raw
 
     return response;
   }

@@ -1,109 +1,209 @@
 import 'dart:convert';
-
+import 'package:aw_app/core/theme/colors.dart';
 import 'package:aw_app/models/subTestModel.dart';
 import 'package:aw_app/provider/auth_provider.dart';
+import 'package:aw_app/provider/data_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as context;
 import 'package:provider/provider.dart';
 import 'package:aw_app/server/apis.dart';
 
-class AnalysisTypesWidget extends StatelessWidget {
+class AnalysisTypesWidget extends StatefulWidget {
   final int? analysisId;
   final int? w_type;
-  List<SubTest>? subTests;
 
-  AnalysisTypesWidget({
+  const AnalysisTypesWidget({
     Key? key,
     required this.analysisId,
     required this.w_type,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    // Example data based on analysisId, replace with your logic
-    final authProvider = context.watch<AuthProvider>();
-    final token = authProvider.token;
+  State<AnalysisTypesWidget> createState() => AnalysisTypesWidgetState();
+}
 
-    if (analysisId == null || w_type == null || token == null) {
-      return const Center(child: CircularProgressIndicator());
+class AnalysisTypesWidgetState extends State<AnalysisTypesWidget> {
+  List<SubTest> selectedList = [];
+  final Map<int, TextEditingController> controllers = {}; // store controllers
+
+  @override
+  void dispose() {
+    for (var controller in controllers.values) {
+      controller.dispose();
     }
-    final ApiEndPoint = "/subtests/$w_type/$analysisId";
+    super.dispose();
+  }
 
-    Future getSubTests(String _token, String EndPoint) async {
-      try {
-        final response = await Api.get.getSubTests(_token, EndPoint);
+  Map<int, Map<int, String>> getSelectedValues() {
+    final Map<int, Map<int, String>> analysisTypeIDs = {};
+    final Map<int, String> subTestMap = {};
 
-        if (response.statusCode == 200) {
-          print('response.body: ${response.body}');
-          print('jsonDecode(response.body): ${jsonDecode(response.body)}');
-          subTests = jsonDecode(
-            response.body,
-          ).map((e) => SubTest.fromJson(e)).toList();
-        } else {
-          print(
-            'response did not returned, it is with code ${response.statusCode}',
-          );
-        }
-      } catch (e) {
-        print('error SubTests: $e');
+    for (var st in selectedList) {
+      final value = controllers[st.id]?.text ?? '';
+      if (value.isNotEmpty) {
+        subTestMap[st.id] = value;
       }
     }
 
-    //call method
-    getSubTests(token, ApiEndPoint);
+    if (subTestMap.isNotEmpty) {
+      analysisTypeIDs[widget.analysisId!] = subTestMap;
+    }
 
-    final analysisData = _getAnalysisData(analysisId!);
-
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blueAccent),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${analysisData[0].split(':')[1]} ',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          SizedBox(height: 8),
-          ...analysisData.map(
-            (item) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
-              child: Text(item, style: TextStyle(fontSize: 16)),
-            ),
-          ),
-          Text("data52"),
-          DropdownMenu<int>(
-            dropdownMenuEntries: subTests!.map(
-                  (st) => DropdownMenuEntry<int>(
-                    value: st.id, // 👈 the value you want
-                    label: st.name, // 👈 the text to show
-                  ),
-                )
-                .toList(),
-            onSelected: (value) {
-              print("Selected SubTestID: $value");
-            },
-          ),
-        ],
-      ),
-    );
+    return analysisTypeIDs;
   }
 
-  List<String> _getAnalysisData(int id) {
-    // Dummy data for demonstration
-    switch (id) {
-      case 1:
-        return ['Sub-Tests For:Physical', 'ID: $id', 'Date: 2024-06-01'];
-      case 2:
-        return ['Sub-Tests For:Chemical', 'ID: $id', 'Date: 2024-06-05'];
-      case 3:
-        return ['Sub-Tests For:Microbiology', 'ID: $id', 'Date: N/A'];
-      default:
-        return ['Sub-Tests For:UN-KNOWN', 'ID: $id', 'Date: N/A'];
+  void clearAllSubTests() {
+    selectedList.clear();
+    controllers.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final dataProvider = context.watch<DataProvider>();
+    final token = authProvider.token;
+
+    if (widget.analysisId == null || widget.w_type == null || token == null) {
+      return const Center(child: CircularProgressIndicator());
     }
+
+    final apiEndPoint = "/subtests/${widget.w_type}/${widget.analysisId}";
+    print("W_typeID:${widget.w_type} analysisId: ${widget.analysisId}");
+
+    return FutureBuilder(
+      future: Api.get.getSubTests(token, apiEndPoint),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Text("Error: ${snapshot.error}");
+        }
+
+        if (!snapshot.hasData || snapshot.data!.statusCode != 200) {
+          return const Text("No data found");
+        }
+
+        final List<dynamic> decoded = jsonDecode(snapshot.data!.body);
+        final List<SubTest> subTests = decoded
+            .map((e) => SubTest.fromJson(e))
+            .cast<SubTest>()
+            .toList();
+
+        return Card(
+          elevation: 3,
+          margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// Title
+                Text(
+                  "Analysis: ${dataProvider.getAnalysisTypeId(widget.analysisId!)}",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: AWColors.colorDark,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                /// Dropdown
+                DropdownMenu<SubTest>(
+                  width: double.infinity,
+                  menuHeight: 300,
+                  label: const Text("Select SubTest"),
+                  inputDecorationTheme: InputDecorationTheme(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                  ),
+                  initialSelection: subTests.isNotEmpty ? subTests.first : null,
+                  dropdownMenuEntries: subTests
+                      .map(
+                        (st) => DropdownMenuEntry<SubTest>(
+                          value: st,
+                          label: st.name,
+                        ),
+                      )
+                      .toList(),
+                  onSelected: (value) {
+                    if (value != null &&
+                        !selectedList.any((st) => st.id == value.id)) {
+                      setState(() {
+                        selectedList.add(value);
+                        controllers[value.id] = TextEditingController();
+                      });
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                /// SubTest list
+                if (selectedList.isNotEmpty)
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: selectedList.length,
+                    itemBuilder: (context, index) {
+                      final st = selectedList[index];
+                      final controller = controllers[st.id]!;
+
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 1,
+                        child: ListTile(
+                          title: Text(st.name),
+                          subtitle: TextField(
+                            controller: controller,
+                            decoration: InputDecoration(
+                              hintText: "Enter value",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              isDense: true,
+                            ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.red),
+                            onPressed: () {
+                              setState(() {
+                                selectedList.remove(st);
+                                controllers.remove(st.id);
+                              });
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                else
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "No subtests selected !!!.",
+                        style: TextStyle(color: Color.fromARGB(255, 255, 2, 2)),
+                      ),
+                      Icon(Icons.warning_amber, color: Colors.red),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

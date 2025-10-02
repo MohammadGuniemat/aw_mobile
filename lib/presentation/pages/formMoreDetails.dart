@@ -5,6 +5,7 @@ import 'package:aw_app/models/WaterSourceTypeModel.dart' show WaterSourceType;
 import 'package:aw_app/presentation/pages/InsertSamplePage.dart';
 import 'package:aw_app/presentation/pages/ViewSamplePage.dart';
 import 'package:aw_app/provider/auth_provider.dart';
+import 'package:aw_app/provider/task_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -48,22 +49,59 @@ class FormMoreDetails extends StatelessWidget {
     final authProvider = context.read<AuthProvider>();
     final samplesList = samplesProvider.samplesList;
 
+    // Get task from provider after first frame
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   print('foundTask222');
+    //   final taskProvider = context.read<TaskProvider>();
+    //   final foundTask = taskProvider.DetailedTasks.where(
+    //     (t) => t.rFID == rfid,
+    //   ).firstOrNull;
+    //   print('foundTask222 ${foundTask?.samplingAllowed}');
+    // });
+
+    final taskProvider = context.watch<TaskProvider>(); // 👈 watch provider
+
+    // find task for this rfid
+    final foundTask = taskProvider.tasks
+        .where((t) => t.rFID == rfid)
+        .firstOrNull;
+
+    final sampleAllowed = foundTask?.samplingAllowed ?? false;
+
+    final formName = foundTask?.rFName ?? false;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
         actions: [
+          // Text("Flag: $sampleAllowed"),
           IconButton(
-            icon: const Icon(Icons.add),
-            iconSize: 40,
+            icon: sampleAllowed
+                ? const Icon(Icons.add)
+                : const Icon(
+                    Icons.lock,
+                    color: Color.fromARGB(166, 244, 67, 54),
+                  ),
+            iconSize: 30,
             tooltip: 'Add Sample',
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => InsertSamplePage(rfid: rfid),
-                ),
-              );
+              if (sampleAllowed) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => InsertSamplePage(rfid: rfid),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("🚫 Sampling not allowed for this task"),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
             },
           ),
         ],
@@ -75,9 +113,9 @@ class FormMoreDetails extends StatelessWidget {
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.center,
-              children: const [
+              children: [
                 Text(
-                  "Form Sample Details",
+                  "[ $formName ] Sample Details",
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,

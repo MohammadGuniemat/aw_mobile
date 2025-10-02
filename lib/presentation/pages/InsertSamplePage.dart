@@ -1,9 +1,11 @@
 import 'dart:typed_data';
 import 'package:aw_app/core/theme/colors.dart';
+import 'package:aw_app/models/dataStaticModel/FormWaterSourceType.dart';
 import 'package:aw_app/models/dataStaticModel/WaterSourceName.dart';
 import 'package:aw_app/presentation/widgets/analysisTypesWidget.dart';
 import 'package:aw_app/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:aw_app/server/apis.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:aw_app/models/InsertSampleModel.dart';
@@ -23,6 +25,13 @@ class InsertSamplePage extends StatefulWidget {
 }
 
 class _InsertSamplePageState extends State<InsertSamplePage> {
+  final GlobalKey<AnalysisTypesWidgetState> analysis1Key =
+      GlobalKey<AnalysisTypesWidgetState>();
+  final GlobalKey<AnalysisTypesWidgetState> analysis2Key =
+      GlobalKey<AnalysisTypesWidgetState>();
+  final GlobalKey<AnalysisTypesWidgetState> analysis3Key =
+      GlobalKey<AnalysisTypesWidgetState>();
+
   final _formKey = GlobalKey<FormState>();
   TaskModel? task;
 
@@ -31,9 +40,8 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
   //int rfid
   String? form_sampleStatus;
   int? form_sampleStatusOwner;
-  Map<String, dynamic>? form_analysisTypeIDs;
+  Map<int, Map<int, String>>? form_analysisTypeIDs;
   String? form_location;
-  int? form_sampleWaterSourceTypeID;
   int? form_samplewaterSourceNameID; //Optional for further waterSourceNameID
   String? form_subLocation;
 
@@ -68,9 +76,30 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
   //   }
   // }
 
-  void _submit(BuildContext context) {
+  // void _collectAllResults() {
+  //   final Map<int, Map<int, String>> allResults = {};
+
+  //   final keys = [analysis1Key, analysis2Key, analysis3Key];
+
+  //   for (var i = 0; i < keys.length; i++) {
+  //     final state = keys[i].currentState;
+  //     if (state != null) {
+  //       final values = state.getSelectedValues();
+  //       if (values.isNotEmpty) {
+  //         allResults.addAll(values);
+  //       }
+  //     }
+  //   }
+
+  //   print("analysisTypeIDs: $allResults");
+  //   form_analysisTypeIDs = allResults;
+  // }
+
+  void _submit(BuildContext context) async {
+    print("=== SUBMIT START ===");
+
     final authProvider = context.read<AuthProvider>();
-    form_sampleStatusOwner = authProvider.userID ?? -11;
+    final token = authProvider.token ?? '';
 
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -83,25 +112,34 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
         sampleStatusOwner: form_sampleStatusOwner ?? 0,
         analysisTypeIDs: form_analysisTypeIDs ?? {},
         location: form_location ?? 'N/A',
-        sampleWaterSourceTypeID: form_sampleWaterSourceTypeID ?? 0,
+        sampleWaterSourceTypeID: form_samplewaterSourceNameID ?? 0,
         subLocation: form_subLocation ?? 'N/A',
       );
 
-      // Convert to Map
       final sampleMap = sample.toJson();
 
-      // Loop through key-value pairs
-      sampleMap.forEach((key, value) {
-        print("$key is Key : Value is $value");
-      });
+      // 🔥 Debug print
+      print("🚀 Sending sample data to API:");
+      sampleMap.forEach((k, v) => print("  $k: $v"));
 
-      final samplesProvider = context.read<SamplesProvider>();
+      try {
+        final response = await Api.post.insertSample(token, sampleMap);
 
-      // samplesProvider.insertSample(sample);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Sample saved successfully!")),
-      );
+        if (response.statusCode == 200) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("✅ Sample inserted successfully!")),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("⚠️ Failed: ${response.body}")),
+          );
+        }
+      } catch (e) {
+        print("❌ API error: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Error while inserting sample")),
+        );
+      }
     }
   }
 
@@ -159,32 +197,83 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
     final waterType = dataProvider.waterTypes
         .firstWhereOrNull((w) => w.waterTypeID == task!.waterTypeID)
         ?.waterTypeName;
-    final formWaterSourceType = dataProvider
-        .findWaterFormSourceTypeById(task!.rFID)
-        ?.waterSourceTypeID;
+    final waterTypeID = dataProvider.waterTypes
+        .firstWhereOrNull((w) => w.waterTypeID == task!.waterTypeID)
+        ?.waterTypeID;
+    // get Water Type 1 مياه شرب 2 مياه عادمة
+    // final singleSampleWaterSourceTypeNameID = dataProvider
+    //     .findWaterFormSourceTypeById(task!.rFID)
+    //     ?.waterSourceTypeID;
+
+    List<FormWaterSourceType>? ListOfWaterFormSourceType = dataProvider
+        .findListOfWaterFormSourceTypeById(task!.rFID);
+    print("formWaterSourceType22 ${ListOfWaterFormSourceType?.length}");
+
+    // concatanating if there is more that one formWater Source Type [
+    // {
+    //     "FormWaterSourceTypeID": 1801,
+    //     "RFID": 1427,
+    //     "WaterSourceTypeID": 1
+    // },
+    // {
+    //     "FormWaterSourceTypeID": 1802,
+    //     "RFID": 1427,
+    //     "WaterSourceTypeID": 2
+    // },
+    // {
+    //     "FormWaterSourceTypeID": 1803,
+    //     "RFID": 1427,
+    //     "WaterSourceTypeID": 3
+    // },
+
+    if (ListOfWaterFormSourceType != null &&
+        ListOfWaterFormSourceType.isNotEmpty) {
+      // Concatenate WaterSourceTypeID values into a single string
+      final concatenated = ListOfWaterFormSourceType.map(
+        (e) => e.waterSourceTypeID.toString(),
+      ).join(", ");
+
+      print("Water Source Types: $concatenated");
+    }
+
+    // Concatenate WaterSourceTypeID into NAMES into a single string
+    String concatingWaterSourceName = 'Not Initalized';
+    if (ListOfWaterFormSourceType != null &&
+        ListOfWaterFormSourceType.isNotEmpty) {
+      concatingWaterSourceName = ListOfWaterFormSourceType.map((wf) {
+        final name = dataProvider.waterSourceTypes
+            .firstWhere((wn) => wn.waterSourceTypeID == wf.waterSourceTypeID)
+            .waterSourceTypesName;
+
+        return name;
+      }).join(", ");
+
+      print("Water Source Names: $concatingWaterSourceName");
+    }
+
     // fill the form record
-    form_sampleWaterSourceTypeID = formWaterSourceType;
-    final selectedWaterSourceName =
-        dataProvider.waterSourceTypes
-            .firstWhereOrNull(
-              (wn) => wn.waterSourceTypeID == formWaterSourceType,
-            )
-            ?.waterSourceTypesName ??
-        "Not Found";
+
     final user = dataProvider.getUserById(task!.collectorID)?.userName;
     final notes = task?.notes ?? '';
 
-    final listOfwaterSourceName = dataProvider.waterSourceNames
-        .where(
-          (w) =>
-              w.waterSourceTypeID == formWaterSourceType &&
-              w.areaID == task!.areaID,
-        )
-        // .map((w) => w.waterSourceName)
-        .toList();
-    print(
-      "listOfwaterSourceName: ${listOfwaterSourceName.toString()}",
-    ); // will print list of strings
+    List<WaterSourceName> listOfwaterSourceName = [];
+
+    if (ListOfWaterFormSourceType != null &&
+        ListOfWaterFormSourceType.isNotEmpty) {
+      final ids = ListOfWaterFormSourceType.map(
+        (wf) => wf.waterSourceTypeID,
+      ).toList();
+
+      listOfwaterSourceName = dataProvider.waterSourceNames
+          .where(
+            (w) =>
+                ids.contains(w.waterSourceTypeID) && // ✅ check membership
+                w.areaID == task!.areaID,
+          )
+          .toList();
+
+      print("listOfwaterSourceName1: $listOfwaterSourceName");
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -220,7 +309,7 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                       _buildInfoCard("Task Name", task!.rFName ?? ''),
                       _buildInfoCard("Governorate", governorate ?? ''),
                       _buildInfoCard("Area", area ?? ''),
-                      _buildInfoCard("Water Source", selectedWaterSourceName),
+                      _buildInfoCard("Water Source", concatingWaterSourceName),
                       _buildInfoCard("Water Type", waterType ?? ''),
                       _buildInfoCard("Collector", user ?? ''),
                       _buildInfoCard("Weather", weather ?? ''),
@@ -259,17 +348,19 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                         items: listOfwaterSourceName
                             .map(
                               (w) => DropdownMenuItem(
-                                value: w.waterSourceNameID,
+                                value: w.waterSourceTypeID,
                                 child: Text(w.waterSourceName),
                                 // child: Text(w.waterSourceNameID.toString()),
                               ),
                             )
                             .toList(),
-                        onChanged: (val) => form_samplewaterSourceNameID = val,
+                        onChanged: (val) {
+                          form_samplewaterSourceNameID = val;
+                          print('VALUE3 $val');
+                        },
                         validator: (val) => val == null ? "Required" : null,
                         onSaved: (val) => form_samplewaterSourceNameID = val,
                       ),
-
                       const SizedBox(height: 16),
 
                       TextFormField(
@@ -340,32 +431,98 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                             .toList(),
                         onSelected: (value) {
                           print("Selected AnalysisType ID: $value");
-                          print(
-                            "http://10.10.15.21:3003/api/subtests/$formWaterSourceType/$value ",
-                          );
-                          setState(() {
-                            // update some state variable instead of calling build()
-                            selectedAnalysisType.add(value!);
-                          });
+
+                          if (!selectedAnalysisType.contains(value!)) {
+                            setState(() {
+                              // update some state variable instead of calling build()
+                              selectedAnalysisType.add(value!);
+                            });
+                          }
                         },
                       ),
                       const SizedBox(height: 20),
 
                       if (selectedAnalysisType.contains(1))
-                        AnalysisTypesWidget(
-                          analysisId: 1,
-                          w_type: formWaterSourceType,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AnalysisTypesWidget(
+                                key: analysis1Key,
+                                analysisId: 1,
+                                w_type: waterTypeID,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                // Clear the child widget's state first
+                                if (analysis1Key.currentState != null) {
+                                  analysis1Key.currentState!.clearAllSubTests();
+                                }
+
+                                // Then remove it from the list and rebuild
+                                setState(() {
+                                  selectedAnalysisType.remove(1);
+                                });
+                              },
+                            ),
+                          ],
                         ),
+
                       if (selectedAnalysisType.contains(2))
-                        AnalysisTypesWidget(
-                          analysisId: 2,
-                          w_type: formWaterSourceType,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AnalysisTypesWidget(
+                                key: analysis2Key,
+                                analysisId: 2,
+                                w_type: waterTypeID,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                // Clear the child widget's state first
+                                if (analysis2Key.currentState != null) {
+                                  analysis2Key.currentState!.clearAllSubTests();
+                                }
+
+                                // Then remove it from the list and rebuild
+                                setState(() {
+                                  selectedAnalysisType.remove(2);
+                                });
+                              },
+                            ),
+                          ],
                         ),
+
                       if (selectedAnalysisType.contains(3))
-                        AnalysisTypesWidget(
-                          analysisId: 3,
-                          w_type: formWaterSourceType,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AnalysisTypesWidget(
+                                key: analysis3Key,
+                                analysisId: 3,
+                                w_type: waterTypeID,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                // Clear the child widget's state first
+                                if (analysis3Key.currentState != null) {
+                                  analysis3Key.currentState!.clearAllSubTests();
+                                }
+
+                                // Then remove it from the list and rebuild
+                                setState(() {
+                                  selectedAnalysisType.remove(3);
+                                });
+                              },
+                            ),
+                          ],
                         ),
+
                       const SizedBox(height: 20),
 
                       DropdownMenu<String>(
