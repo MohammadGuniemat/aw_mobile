@@ -81,13 +81,13 @@ class FormMoreDetails extends StatelessWidget {
                 ? const Icon(Icons.add)
                 : const Icon(
                     Icons.lock,
-                    color: Color.fromARGB(166, 244, 67, 54),
+                    color: Color.fromARGB(166, 253, 253, 253),
                   ),
             iconSize: 30,
             tooltip: 'Add Sample',
             onPressed: () {
               if (sampleAllowed) {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => InsertSamplePage(rfid: rfid),
@@ -160,7 +160,6 @@ class FormMoreDetails extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(sample.sampleID.toString()),
                                 IconButton(
                                   onPressed: () {
                                     Navigator.push(
@@ -268,6 +267,7 @@ class FormMoreDetails extends StatelessWidget {
                               );
                             } else if (snapshot.hasData) {
                               final data = jsonDecode(snapshot.data!.body);
+                              print('DataAnalysis : ${data}');
                               final analysis = (data as List)
                                   .map((e) => e['AnalysisTypeDesc'])
                                   .join(', ');

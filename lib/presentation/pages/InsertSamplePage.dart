@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:aw_app/core/theme/colors.dart';
 import 'package:aw_app/models/dataStaticModel/FormWaterSourceType.dart';
 import 'package:aw_app/models/dataStaticModel/WaterSourceName.dart';
+import 'package:aw_app/presentation/pages/formMoreDetails.dart';
 import 'package:aw_app/presentation/widgets/analysisTypesWidget.dart';
 import 'package:aw_app/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
@@ -42,13 +43,19 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
   int? form_sampleStatusOwner;
   Map<int, Map<int, String>>? form_analysisTypeIDs;
   String? form_location;
-  int? form_samplewaterSourceNameID; //Optional for further waterSourceNameID
+  int? form_samplewaterSourceTypeID; //Optional for further waterSourceNameID
   String? form_subLocation;
+
+  // === NEW/UPDATED STATE VARIABLES FOR DYNAMIC SUB LOCATION ===
+  bool _eableSampleSubRecords = false;
+  List<String> _subLocationsList = [];
+  int?
+  _selectedWaterSourceNameID; // 👈 FIX: Used to hold the selected Location ID and prevent the assertion error.
+  // ==========================================================
 
   // using for sub test renderer
   List<int> selectedAnalysisType = [];
 
-  // final ImagePicker _picker = ImagePicker();
   late TextEditingController notesController;
 
   @override
@@ -68,40 +75,110 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
     });
   }
 
-  // Future<void> _pickImage() async {
-  //   final XFile? image = await _picker.pickImage(source: ImageSource.camera);
-  //   if (image != null) {
-  //     final bytes = await image.readAsBytes();
-  //     setState(() => form_sampleImageBytes = bytes);
-  //   }
-  // }
+  // === FUNCTION TO HANDLE LOCATION CHANGE LOGIC ===
+  void _handleLocationChanged(
+    int? waterSourceNameID,
+    DataProvider dataProvider,
+  ) {
+    if (waterSourceNameID == null) {
+      setState(() {
+        form_samplewaterSourceTypeID = null;
+        form_location = null;
+        _eableSampleSubRecords = false;
+        _subLocationsList = [];
+        form_subLocation = null;
+      });
+      return;
+    }
 
-  // void _collectAllResults() {
-  //   final Map<int, Map<int, String>> allResults = {};
+    // 1. Find the WaterSourceTypeID from the selected WaterSourceNameID
+    final WaterSourceName? selectedWST = dataProvider.waterSourceNames
+        .firstWhereOrNull((wsn) => wsn.waterSourceNameID == waterSourceNameID);
 
-  //   final keys = [analysis1Key, analysis2Key, analysis3Key];
+    if (selectedWST == null) return;
 
-  //   for (var i = 0; i < keys.length; i++) {
-  //     final state = keys[i].currentState;
-  //     if (state != null) {
-  //       final values = state.getSelectedValues();
-  //       if (values.isNotEmpty) {
-  //         allResults.addAll(values);
-  //       }
-  //     }
-  //   }
+    final typeID = selectedWST.waterSourceTypeID;
 
-  //   print("analysisTypeIDs: $allResults");
-  //   form_analysisTypeIDs = allResults;
-  // }
+    // Update form data immediately
+    form_samplewaterSourceTypeID = typeID;
+    form_location = selectedWST.waterSourceName;
+
+    // Update state variables to control UI rendering
+    setState(() {
+      // Logic mirrored from the React implementation:
+      if ([1, 2, 6].contains(typeID)) {
+        // بئر خزان ضخ تعطيل - No sub-location
+        _eableSampleSubRecords = false;
+        _subLocationsList = [];
+      } else if ([3].contains(typeID)) {
+        // شبكات تفعيل انبوت - Free text input
+        _eableSampleSubRecords = true;
+        _subLocationsList = [];
+      } else if ([4].contains(typeID)) {
+        // عادمة تفعيل ان اوت
+        _eableSampleSubRecords = true;
+        _subLocationsList = ['In', 'Out'];
+      } else if ([5].contains(typeID)) {
+        // تحليه تفعيل بثلاث خيارات
+        _eableSampleSubRecords = true;
+        _subLocationsList = ['RO', 'Product', 'Well'];
+      } else if ([7].contains(typeID)) {
+        // معالجة تفعيل ان اوت وخيار
+        _eableSampleSubRecords = true;
+        _subLocationsList = ['In', 'Out', 'Other'];
+      } else {
+        // Default
+        _eableSampleSubRecords = false;
+        _subLocationsList = [];
+      }
+
+      // Clear subLocation value when the location type changes
+      form_subLocation = null;
+    });
+  }
+  // ========================================================
 
   void _submit(BuildContext context) async {
     print("=== SUBMIT START ===");
 
     final authProvider = context.read<AuthProvider>();
+    final sampleProvider = context.read<SamplesProvider>();
+
     final token = authProvider.token ?? '';
+    form_sampleStatusOwner = authProvider.userID;
 
     if (_formKey.currentState!.validate()) {
+      // 1. Manually collect data from AnalysisTypesWidget keys BEFORE saving the form.
+      form_analysisTypeIDs = {};
+
+      // Collect data from the first analysis widget (if it was rendered)
+      if (analysis1Key.currentState != null &&
+          selectedAnalysisType.contains(1)) {
+        final data = analysis1Key.currentState!.getSelectedValues();
+        if (data.isNotEmpty) {
+          form_analysisTypeIDs!.addAll(data);
+        }
+      }
+
+      // Collect data from the second analysis widget (if it was rendered)
+      if (analysis2Key.currentState != null &&
+          selectedAnalysisType.contains(2)) {
+        final data = analysis2Key.currentState!.getSelectedValues();
+        if (data.isNotEmpty) {
+          form_analysisTypeIDs!.addAll(data);
+        }
+      }
+
+      // Collect data from the third analysis widget (if it was rendered)
+      if (analysis3Key.currentState != null &&
+          selectedAnalysisType.contains(3)) {
+        final data = analysis3Key.currentState!.getSelectedValues();
+        if (data.isNotEmpty) {
+          form_analysisTypeIDs!.addAll(data);
+        }
+      }
+
+      // 2. Save other form fields (like batchNo, notes, etc.)
       _formKey.currentState!.save();
 
       final sample = InsertSampleModel(
@@ -110,9 +187,10 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
         rfid: widget.rfid,
         sampleStatus: form_sampleStatus ?? 'N/A',
         sampleStatusOwner: form_sampleStatusOwner ?? 0,
+        // The analysis data is now correctly populated here:
         analysisTypeIDs: form_analysisTypeIDs ?? {},
         location: form_location ?? 'N/A',
-        sampleWaterSourceTypeID: form_samplewaterSourceNameID ?? 0,
+        sampleWaterSourceTypeID: form_samplewaterSourceTypeID ?? 0,
         subLocation: form_subLocation ?? 'N/A',
       );
 
@@ -120,12 +198,21 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
 
       // 🔥 Debug print
       print("🚀 Sending sample data to API:");
-      sampleMap.forEach((k, v) => print("  $k: $v"));
+      sampleMap.forEach((k, v) => print("  $k: $v"));
+      print(
+        "  analysisTypeIDs: ${form_analysisTypeIDs}",
+      ); // Verify the analysis data
 
       try {
         final response = await Api.post.insertSample(token, sampleMap);
 
         if (response.statusCode == 200) {
+          sampleProvider.setListOfFormSamples(token, widget.rfid);
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => FormMoreDetails(rfid: widget.rfid),
+            ),
+          );
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("✅ Sample inserted successfully!")),
           );
@@ -200,41 +287,10 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
     final waterTypeID = dataProvider.waterTypes
         .firstWhereOrNull((w) => w.waterTypeID == task!.waterTypeID)
         ?.waterTypeID;
-    // get Water Type 1 مياه شرب 2 مياه عادمة
-    // final singleSampleWaterSourceTypeNameID = dataProvider
-    //     .findWaterFormSourceTypeById(task!.rFID)
-    //     ?.waterSourceTypeID;
 
     List<FormWaterSourceType>? ListOfWaterFormSourceType = dataProvider
         .findListOfWaterFormSourceTypeById(task!.rFID);
     print("formWaterSourceType22 ${ListOfWaterFormSourceType?.length}");
-
-    // concatanating if there is more that one formWater Source Type [
-    // {
-    //     "FormWaterSourceTypeID": 1801,
-    //     "RFID": 1427,
-    //     "WaterSourceTypeID": 1
-    // },
-    // {
-    //     "FormWaterSourceTypeID": 1802,
-    //     "RFID": 1427,
-    //     "WaterSourceTypeID": 2
-    // },
-    // {
-    //     "FormWaterSourceTypeID": 1803,
-    //     "RFID": 1427,
-    //     "WaterSourceTypeID": 3
-    // },
-
-    if (ListOfWaterFormSourceType != null &&
-        ListOfWaterFormSourceType.isNotEmpty) {
-      // Concatenate WaterSourceTypeID values into a single string
-      final concatenated = ListOfWaterFormSourceType.map(
-        (e) => e.waterSourceTypeID.toString(),
-      ).join(", ");
-
-      print("Water Source Types: $concatenated");
-    }
 
     // Concatenate WaterSourceTypeID into NAMES into a single string
     String concatingWaterSourceName = 'Not Initalized';
@@ -252,7 +308,6 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
     }
 
     // fill the form record
-
     final user = dataProvider.getUserById(task!.collectorID)?.userName;
     final notes = task?.notes ?? '';
 
@@ -338,55 +393,96 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                       ),
                       const SizedBox(height: 16),
 
+                      // Location Dropdown (WaterSourceName)
                       DropdownButtonFormField<int>(
-                        decoration: const InputDecoration(
-                          labelText: "Water Source Name *",
-                          border: OutlineInputBorder(),
-                          filled: true,
-                          fillColor: Colors.white,
-                        ),
-                        items: listOfwaterSourceName
-                            .map(
-                              (w) => DropdownMenuItem(
-                                value: w.waterSourceTypeID,
-                                child: Text(w.waterSourceName),
-                                // child: Text(w.waterSourceNameID.toString()),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (val) {
-                          form_samplewaterSourceNameID = val;
-                          print('VALUE3 $val');
-                        },
-                        validator: (val) => val == null ? "Required" : null,
-                        onSaved: (val) => form_samplewaterSourceNameID = val,
-                      ),
-                      const SizedBox(height: 16),
-
-                      TextFormField(
                         decoration: const InputDecoration(
                           labelText: "Location *",
                           border: OutlineInputBorder(),
                           filled: true,
                           fillColor: Colors.white,
                         ),
-                        validator: (val) =>
-                            val == null || val.isEmpty ? "Required" : null,
-                        onSaved: (val) => form_location = val,
+                        // 👈 FIX: Use the state variable to hold the selected value
+                        value: _selectedWaterSourceNameID,
+                        items: listOfwaterSourceName
+                            .map(
+                              (w) => DropdownMenuItem(
+                                value: w.waterSourceNameID,
+                                child: Text(w.waterSourceName),
+                              ),
+                            )
+                            .toList(),
+                        // === UPDATED onChanged CALL ===
+                        onChanged: (val) {
+                          setState(() {
+                            // 👈 FIX: Update the state variable immediately
+                            _selectedWaterSourceNameID = val;
+                          });
+                          if (val != null) {
+                            _handleLocationChanged(val, dataProvider);
+                          }
+                        },
+                        // ==============================
+                        validator: (val) => val == null ? "Required" : null,
                       ),
-
                       const SizedBox(height: 16),
 
-                      TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: "Sub Location",
-                          border: OutlineInputBorder(),
-                          filled: true,
-                          fillColor: Colors.white,
+                      // === DYNAMIC SUB LOCATION FIELD ===
+                      if (_eableSampleSubRecords)
+                        if (_subLocationsList.isNotEmpty)
+                          // Renders a Dropdown if a list of sub-locations is available (Types 4, 5, 7)
+                          DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(
+                              labelText: "Sub Location *",
+                              border: OutlineInputBorder(),
+                              filled: true,
+                              fillColor: Colors.white,
+                            ),
+                            value: form_subLocation,
+                            items: _subLocationsList
+                                .map(
+                                  (sub) => DropdownMenuItem(
+                                    value: sub,
+                                    child: Text(sub),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (val) {
+                              setState(() {
+                                form_subLocation = val;
+                              });
+                            },
+                            validator: (val) => val == null ? "Required" : null,
+                            onSaved: (val) => form_subLocation = val,
+                          )
+                        else
+                          // Renders a TextFormField if sub-location is enabled but no predefined list exists (Type 3)
+                          TextFormField(
+                            decoration: const InputDecoration(
+                              labelText: "Sub Location *",
+                              border: OutlineInputBorder(),
+                              filled: true,
+                              fillColor: Colors.white,
+                            ),
+                            initialValue: form_subLocation,
+                            onSaved: (val) => form_subLocation = val,
+                            validator: (val) =>
+                                val == null || val.isEmpty ? "Required" : null,
+                          )
+                      else
+                        // Renders a disabled TextFormField when sub-location is not enabled (Types 1, 2, 6)
+                        TextFormField(
+                          decoration: InputDecoration(
+                            labelText: "Sub Location (N/A)",
+                            border: const OutlineInputBorder(),
+                            filled: true,
+                            fillColor: Colors.grey[200], // Greyed out
+                          ),
+                          enabled: false,
+                          initialValue: '',
+                          onSaved: (val) => form_subLocation = null,
                         ),
-                        onSaved: (val) => form_subLocation = val,
-                      ),
 
+                      // ==================================
                       const SizedBox(height: 16),
 
                       TextFormField(
@@ -411,13 +507,12 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                           alignLabelWithHint: true,
                         ),
                         onSaved: (val) => form_notes = val,
-
                         maxLines: 3,
                       ),
 
                       const SizedBox(height: 20),
 
-                      //Test Types
+                      // Test Types Dropdown
                       DropdownMenu<int>(
                         width: 300,
                         label: const Text("Select Analysis Type"),
@@ -434,7 +529,6 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
 
                           if (!selectedAnalysisType.contains(value!)) {
                             setState(() {
-                              // update some state variable instead of calling build()
                               selectedAnalysisType.add(value!);
                             });
                           }
@@ -442,6 +536,7 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                       ),
                       const SizedBox(height: 20),
 
+                      // AnalysisTypeWidget renderings
                       if (selectedAnalysisType.contains(1))
                         Row(
                           children: [
@@ -455,12 +550,9 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () {
-                                // Clear the child widget's state first
                                 if (analysis1Key.currentState != null) {
                                   analysis1Key.currentState!.clearAllSubTests();
                                 }
-
-                                // Then remove it from the list and rebuild
                                 setState(() {
                                   selectedAnalysisType.remove(1);
                                 });
@@ -468,7 +560,6 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                             ),
                           ],
                         ),
-
                       if (selectedAnalysisType.contains(2))
                         Row(
                           children: [
@@ -482,12 +573,9 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () {
-                                // Clear the child widget's state first
                                 if (analysis2Key.currentState != null) {
                                   analysis2Key.currentState!.clearAllSubTests();
                                 }
-
-                                // Then remove it from the list and rebuild
                                 setState(() {
                                   selectedAnalysisType.remove(2);
                                 });
@@ -495,7 +583,6 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                             ),
                           ],
                         ),
-
                       if (selectedAnalysisType.contains(3))
                         Row(
                           children: [
@@ -509,12 +596,9 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () {
-                                // Clear the child widget's state first
                                 if (analysis3Key.currentState != null) {
                                   analysis3Key.currentState!.clearAllSubTests();
                                 }
-
-                                // Then remove it from the list and rebuild
                                 setState(() {
                                   selectedAnalysisType.remove(3);
                                 });
@@ -525,22 +609,39 @@ class _InsertSamplePageState extends State<InsertSamplePage> {
 
                       const SizedBox(height: 20),
 
-                      DropdownMenu<String>(
-                        width: 300,
-                        label: const Text("Sample Status"),
-                        dropdownMenuEntries: Samplestatus.sampleStatusList
+                      // You'll need to use setState for this if it's not already a state variable:
+                      // String? _selectedSampleStatus;
+                      DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: "Sample Status *",
+                          border: OutlineInputBorder(),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                        // Use the form variable to hold the value
+                        value: form_sampleStatus,
+                        items: Samplestatus.sampleStatusList
                             .map(
-                              (status) => DropdownMenuEntry<String>(
+                              (status) => DropdownMenuItem(
                                 value: status,
-                                label: status,
+                                child: Text(status),
                               ),
                             )
                             .toList(),
-                        onSelected: (val) {
-                          form_sampleStatus = val;
-                        },
-                      ),
 
+                        onChanged: (val) {
+                          // Use setState to update the UI and the form variable
+                          setState(() {
+                            form_sampleStatus = val;
+                          });
+                        },
+
+                        // The validator goes here, directly in the widget definition
+                        validator: (val) => val == null ? "Required" : null,
+
+                        // The onSaved callback goes here
+                        onSaved: (val) => form_sampleStatus = val,
+                      ),
                       const SizedBox(height: 20),
 
                       SizedBox(

@@ -179,6 +179,7 @@ class _Get {
 
   Future<http.Response> getAnalysisType(String token, int sampleID) async {
     final url = Uri.parse('${Api.baseUrl}analysisTypes/$sampleID');
+    
 
     final response = await http.get(
       url,

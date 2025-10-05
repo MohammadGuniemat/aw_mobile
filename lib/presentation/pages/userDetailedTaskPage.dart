@@ -1,7 +1,11 @@
+import 'package:aw_app/models/dataStaticModel/Department.dart';
+import 'package:aw_app/models/dataStaticModel/Weather.dart';
+import 'package:aw_app/models/dataStaticModel/sector.dart';
 import 'package:aw_app/models/formSampleUpdate.dart';
 import 'package:aw_app/presentation/pages/formMoreDetails.dart';
 import 'package:aw_app/presentation/widgets/modalWidget.dart';
 import 'package:aw_app/provider/auth_provider.dart';
+import 'package:aw_app/provider/data_provider.dart';
 import 'package:aw_app/provider/samplesProvider.dart';
 import 'package:aw_app/provider/task_provider.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +51,10 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
   late TaskProvider _taskProvider;
   late AuthProvider _authProvider;
   late SamplesProvider _samplesProvider;
+  late DataProvider _dataProvider;
+  late List<Sector> _sectorsList;
+  late List<Department> _departmentsList;
+  late List<Weather> _weathersList;
 
   @override
   void initState() {
@@ -54,7 +62,23 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
     _taskProvider = context.read<TaskProvider>();
     _authProvider = context.read<AuthProvider>();
     _samplesProvider = context.read<SamplesProvider>();
+    _dataProvider = context.read<DataProvider>();
+    _sectorsList = _dataProvider.sectors.toList().cast<Sector>();
+    _departmentsList = _dataProvider.departments.cast<Department>();
+    _weathersList = _dataProvider.weather.toList().cast<Weather>();
     _loadTasks();
+  }
+
+  void getSectors() {
+    print("object");
+    List myList = _dataProvider.sectors.toList();
+    print("myList $myList");
+    print("myList ${myList.length}");
+
+    for (var element in myList) {
+      print("sectorDesc ${element.sectorDesc}");
+      print("sectorID ${element.sectorID}");
+    }
   }
 
   void _loadTasks() {
@@ -66,15 +90,6 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
       10, //total recordes per page
     );
   }
-
-  // void _loadSampleListForForm(int RFID) {
-  //   _samplesProvider.setListOfFormSamples(_authProvider.token!, RFID);
-
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(builder: (context) => FormMoreDetails()),
-  //   );
-  // }
 
   void _loadSampleListForForm(int rfid) async {
     await _samplesProvider.setListOfFormSamples(_authProvider.token!, rfid);
@@ -88,10 +103,6 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
     }
   }
 
-  // String _sampleGettingMS() {
-  //   return _samplesProvider.getSampleProviderMsg;
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,6 +112,22 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
         foregroundColor: AWColors.background,
         centerTitle: true,
         elevation: 4,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: IconButton(
+              icon: const Icon(Icons.replay_outlined),
+              onPressed: () {
+                _authProvider.getUserInfo();
+                _authProvider.refreshSingleUserInfo();
+                _taskProvider.reloadTasks(
+                  _authProvider.token!,
+                  _authProvider.userID!,
+                );
+              },
+            ),
+          ),
+        ],
       ),
       body: FutureBuilder<List<TaskModel>>(
         future: _tasksFuture,
@@ -153,18 +180,53 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Top: Task Name & RFID
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            ElevatedButton(
-                              // token and RFID are in the caleed function body
+                            IconButton(
                               onPressed: () => {
                                 _loadSampleListForForm(task.rFID!),
                               },
+                              color: AWColors.colorDark,
+                              style: IconButton.styleFrom(),
+
+                              icon: const Icon(
+                                Icons
+                                    .bar_chart, // Example icon related to 'samples' or 'list'
+                              ),
+
+                              tooltip: 'Show Samples',
+                            ),
+                            Text(
+                              task.rFName ?? "Unnamed Task",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: statusColor,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {},
+                              icon: Icon(Icons.edit),
+                              color: AWColors.colorDark,
+                            ),
+                          ],
+                        ),
+                        // Top: Task Name & RFID
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            SizedBox(height: 50),
+                            ElevatedButton(
+                              // token and RFID are in the caleed function body
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AWColors.colorDark,
+                              ),
+                              onPressed: () => {getSectors()},
                               child: const Text(
-                                'EDIT',
-                                style: TextStyle(color: Colors.blue),
+                                'SHOW SAMPLES',
+                                style: TextStyle(color: AWColors.colorLight),
                               ),
                             ),
                             Column(
@@ -190,17 +252,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                               ],
                             ),
                             const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                task.rFName ?? "Unnamed Task",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: statusColor,
-                                ),
-                              ),
-                            ),
+
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -289,27 +341,51 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                             _buildIconInfoRow(
                               Icons.apartment,
                               "Sector",
-                              task.sectorDesc,
+                              // task.sectorDesc,
+                              task.toString(),
                               color: AWColors.colorDark,
                             ),
+
+                            // ⚠️ ASSUMPTION: Update the type of the list you use for the dropdown
+                            // We'll use the provider's list, cast to List<dynamic> temporarily for flexibility,
+                            // but List<Sector> is ideal if you define the Sector class.
+                            // For Sectors
+                            CustomTaskDropdown<Sector>(
+                              items: _sectorsList,
+                              initValue: task.sectorID ?? 0,
+                              label: "Sector *",
+                              getId: (s) => s.sectorID,
+                              getDesc: (s) => s.sectorDesc,
+                              onChanged: (id) => print("Sector ID: $id"),
+                            ),
+
+                            // For Departments
+                            CustomTaskDropdown<Department>(
+                              items: _departmentsList,
+                              initValue: task.departmentID ?? 0,
+                              label: "Department *",
+                              getId: (d) => d.departmentID,
+                              getDesc: (d) => d.departmentName,
+                              onChanged: (id) => print("Department ID: $id"),
+                            ),
+
+                            // For Weather
+                            CustomTaskDropdown<Weather>(
+                              items: _weathersList,
+                              initValue: task.weatherID ?? 0,
+                              label: "Weather *",
+                              getId: (w) => w.weatherID,
+                              getDesc: (w) => w.weatherDesc,
+                              onChanged: (id) => print("Weather ID: $id"),
+                            ),
+
                             _buildIconInfoRow(
                               Icons.business,
                               "Department",
                               task.departmentName,
                               color: AWColors.colorDark,
                             ),
-                            // _buildIconInfoRow(
-                            //   Icons.person,
-                            //   "Collector",
-                            //   task.collectorName,
-                            //   color: AWColors.colorDark,
-                            // ),
-                            // _buildIconInfoRow(
-                            //   Icons.person_outline,
-                            //   "Collector User",
-                            //   task.collectorUserName,
-                            //   color: AWColors.colorDark,
-                            // ),
+
                             _buildIconInfoRow(
                               Icons.person_pin,
                               "Assigned By",
@@ -355,8 +431,6 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
 
                         Divider(height: 20, color: Colors.grey.shade300),
 
-                        // Text("formWaterSourceTypes ${task.wa}"),
-
                         // Notes
                         // if (task.notes != null && task.notes!.isNotEmpty)
                         if (true)
@@ -364,8 +438,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Container(
                               width: double.infinity,
-                              // color: const Color.fromARGB(113, 63, 132, 145),
-                              // padding: EdgeInsets.all(10),
+
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -458,5 +531,84 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
       default:
         return Colors.grey;
     }
+  }
+}
+
+// ----------------------------------------------------
+// 🎯 Define a reusable, self-contained custom widget
+// ----------------------------------------------------
+// 🎯 Generic Custom Dropdown Widget
+// ----------------------------------------------------
+class CustomTaskDropdown<T> extends StatefulWidget {
+  /// The list of items (can be Sector, Department, or Weather)
+  final List<T> items;
+
+  /// How to get the ID from an item
+  final int Function(T) getId;
+
+  /// How to get the description text from an item
+  final String Function(T) getDesc;
+
+  /// Optional label for the dropdown
+  final String label;
+
+  final int initValue;
+
+  /// Called when value changes
+  final void Function(int?)? onChanged;
+
+  /// Optional validator
+  final String? Function(int?)? validator;
+
+  const CustomTaskDropdown({
+    super.key,
+    required this.items,
+    required this.initValue,
+    required this.getId,
+    required this.getDesc,
+    this.label = "Select",
+    this.onChanged,
+    this.validator,
+  });
+
+  @override
+  State<CustomTaskDropdown<T>> createState() => _CustomTaskDropdownState<T>();
+}
+
+class _CustomTaskDropdownState<T> extends State<CustomTaskDropdown<T>> {
+  int? _selectedValue;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.items.isNotEmpty) {
+      _selectedValue = widget.initValue;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dropdownItems = widget.items.map((item) {
+      return DropdownMenuItem<int>(
+        value: widget.getId(item),
+        child: Text(widget.getDesc(item)),
+      );
+    }).toList();
+
+    return DropdownButtonFormField<int>(
+      decoration: InputDecoration(
+        labelText: widget.label,
+        border: const OutlineInputBorder(),
+      ),
+      value: _selectedValue,
+      items: dropdownItems,
+      onChanged: (newValue) {
+        setState(() {
+          _selectedValue = newValue;
+        });
+        widget.onChanged?.call(newValue);
+      },
+      validator: widget.validator ?? (val) => val == null ? "Required" : null,
+    );
   }
 }

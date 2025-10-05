@@ -4,7 +4,7 @@ import 'package:aw_app/server/ApiService.dart';
 // Import all your models
 import 'package:aw_app/models/dataStaticModel/AnalysisType.dart';
 import 'package:aw_app/models/dataStaticModel/area.dart';
-import 'package:aw_app/models/dataStaticModel/department.dart';
+import 'package:aw_app/models/dataStaticModel/Department.dart';
 import 'package:aw_app/models/dataStaticModel/WaterSourceType.dart';
 import 'package:aw_app/models/dataStaticModel/governorate.dart';
 import 'package:aw_app/models/dataStaticModel/MethodUsed.dart';
@@ -15,7 +15,7 @@ import 'package:aw_app/models/dataStaticModel/unit.dart';
 import 'package:aw_app/models/dataStaticModel/WaterSourceName.dart';
 // import 'package:aw_app/models/dataStaticModel/WaterSourceType.dart';
 import 'package:aw_app/models/dataStaticModel/WaterType.dart';
-import 'package:aw_app/models/dataStaticModel/weather.dart';
+import 'package:aw_app/models/dataStaticModel/Weather.dart';
 import 'package:aw_app/models/dataStaticModel/FormWaterSourceType.dart';
 import 'package:flutter/material.dart';
 
