@@ -55,6 +55,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
   late List<Sector> _sectorsList;
   late List<Department> _departmentsList;
   late List<Weather> _weathersList;
+  late Map<int, Map<String, int>> selectedFormValuesByRFID;
 
   @override
   void initState() {
@@ -66,6 +67,8 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
     _sectorsList = _dataProvider.sectors.toList().cast<Sector>();
     _departmentsList = _dataProvider.departments.cast<Department>();
     _weathersList = _dataProvider.weather.toList().cast<Weather>();
+    selectedFormValuesByRFID = {};
+
     _loadTasks();
   }
 
@@ -187,7 +190,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                               onPressed: () => {
                                 _loadSampleListForForm(task.rFID!),
                               },
-                              color: AWColors.colorDark,
+                              color: const Color.fromARGB(255, 2, 139, 251),
                               style: IconButton.styleFrom(),
 
                               icon: const Icon(
@@ -207,9 +210,33 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                               ),
                             ),
                             IconButton(
-                              onPressed: () {},
-                              icon: Icon(Icons.edit),
-                              color: AWColors.colorDark,
+                              onPressed: () async {
+                                final rfid = task.rFID!;
+                                final formData =
+                                    selectedFormValuesByRFID[rfid] ??
+                                    {
+                                      'DepartmentID': task.departmentID ?? -1,
+                                      'SectorID': task.sectorID ?? -1,
+                                      'WeatherID': task.weatherID ?? -1,
+                                    };
+
+                                print(
+                                  "📝 Submitting for RFID: $rfid with data: $formData",
+                                );
+
+                                // Example placeholder for your API call
+                                // await _samplesProvider.submitTaskForm(_authProvider.token!, rfid, formData);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "✅ Submitted RFID $rfid successfully!",
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.save),
+                              color: const Color.fromARGB(255, 2, 139, 251),
                             ),
                           ],
                         ),
@@ -218,17 +245,17 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             SizedBox(height: 50),
-                            ElevatedButton(
-                              // token and RFID are in the caleed function body
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AWColors.colorDark,
-                              ),
-                              onPressed: () => {getSectors()},
-                              child: const Text(
-                                'SHOW SAMPLES',
-                                style: TextStyle(color: AWColors.colorLight),
-                              ),
-                            ),
+                            // ElevatedButton(
+                            //   // token and RFID are in the caleed function body
+                            //   style: ElevatedButton.styleFrom(
+                            //     backgroundColor: AWColors.colorDark,
+                            //   ),
+                            //   onPressed: () => {getSectors()},
+                            //   child: const Text(
+                            //     'SHOW SAMPLES',
+                            //     style: TextStyle(color: AWColors.colorLight),
+                            //   ),
+                            // ),
                             Column(
                               children: [
                                 // Text(
@@ -338,13 +365,12 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                               task.governorateName,
                               color: AWColors.colorDark,
                             ),
-                            _buildIconInfoRow(
-                              Icons.apartment,
-                              "Sector",
-                              // task.sectorDesc,
-                              task.toString(),
-                              color: AWColors.colorDark,
-                            ),
+                            // _buildIconInfoRow(
+                            //   Icons.apartment,
+                            //   "Sector",
+                            //   task.sectorDesc,
+                            //   color: AWColors.colorDark,
+                            // ),
 
                             // ⚠️ ASSUMPTION: Update the type of the list you use for the dropdown
                             // We'll use the provider's list, cast to List<dynamic> temporarily for flexibility,
@@ -352,40 +378,82 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                             // For Sectors
                             CustomTaskDropdown<Sector>(
                               items: _sectorsList,
-                              initValue: task.sectorID ?? 0,
+                              initValue: task.sectorID,
                               label: "Sector *",
                               getId: (s) => s.sectorID,
                               getDesc: (s) => s.sectorDesc,
-                              onChanged: (id) => print("Sector ID: $id"),
+                              onChanged: (id) {
+                                final rfid = task.rFID!;
+                                selectedFormValuesByRFID.putIfAbsent(
+                                  rfid,
+                                  () => {
+                                    'DepartmentID': -1,
+                                    'SectorID': -1,
+                                    'WeatherID': -1,
+                                  },
+                                );
+                                selectedFormValuesByRFID[rfid]!['SectorID'] =
+                                    id ?? -1;
+                                print(
+                                  "✅ [RFID $rfid] Sector selected: ${selectedFormValuesByRFID[rfid]!['SectorID']}",
+                                );
+                              },
                             ),
 
-                            // For Departments
                             CustomTaskDropdown<Department>(
                               items: _departmentsList,
-                              initValue: task.departmentID ?? 0,
+                              initValue: task.departmentID,
                               label: "Department *",
                               getId: (d) => d.departmentID,
                               getDesc: (d) => d.departmentName,
-                              onChanged: (id) => print("Department ID: $id"),
+                              onChanged: (id) {
+                                final rfid = task.rFID!;
+                                selectedFormValuesByRFID.putIfAbsent(
+                                  rfid,
+                                  () => {
+                                    'DepartmentID': -1,
+                                    'SectorID': -1,
+                                    'WeatherID': -1,
+                                  },
+                                );
+                                selectedFormValuesByRFID[rfid]!['DepartmentID'] =
+                                    id ?? -1;
+                                print(
+                                  "✅ [RFID $rfid] Department selected: ${selectedFormValuesByRFID[rfid]!['DepartmentID']}",
+                                );
+                              },
                             ),
 
-                            // For Weather
                             CustomTaskDropdown<Weather>(
                               items: _weathersList,
-                              initValue: task.weatherID ?? 0,
+                              initValue: task.weatherID,
                               label: "Weather *",
                               getId: (w) => w.weatherID,
                               getDesc: (w) => w.weatherDesc,
-                              onChanged: (id) => print("Weather ID: $id"),
+                              onChanged: (id) {
+                                final rfid = task.rFID!;
+                                selectedFormValuesByRFID.putIfAbsent(
+                                  rfid,
+                                  () => {
+                                    'DepartmentID': -1,
+                                    'SectorID': -1,
+                                    'WeatherID': -1,
+                                  },
+                                );
+                                selectedFormValuesByRFID[rfid]!['WeatherID'] =
+                                    id ?? -1;
+                                print(
+                                  "✅ [RFID $rfid] Weather selected: ${selectedFormValuesByRFID[rfid]!['WeatherID']}",
+                                );
+                              },
                             ),
 
-                            _buildIconInfoRow(
-                              Icons.business,
-                              "Department",
-                              task.departmentName,
-                              color: AWColors.colorDark,
-                            ),
-
+                            // _buildIconInfoRow(
+                            //   Icons.business,
+                            //   "Department",
+                            //   task.departmentName,
+                            //   color: AWColors.colorDark,
+                            // ),
                             _buildIconInfoRow(
                               Icons.person_pin,
                               "Assigned By",
@@ -408,14 +476,14 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                                   ? Color.fromARGB(255, 10, 112, 138)
                                   : Color.fromARGB(255, 245, 79, 2),
                             ),
-                            _buildIconInfoRow(
-                              task.weatherDesc == 'Rain'
-                                  ? Icons.water_drop
-                                  : Icons.wb_sunny,
-                              "Weather",
-                              task.weatherDesc,
-                              color: getWeatherColor(task.weatherDesc),
-                            ),
+                            // _buildIconInfoRow(
+                            //   task.weatherDesc == 'Rain'
+                            //       ? Icons.water_drop
+                            //       : Icons.wb_sunny,
+                            //   "Weather",
+                            //   task.weatherDesc,
+                            //   color: getWeatherColor(task.weatherDesc),
+                            // ),
                             _buildIconInfoRow(
                               task.samplingAllowed == true
                                   ? Icons.check_circle
@@ -537,33 +605,19 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
 // ----------------------------------------------------
 // 🎯 Define a reusable, self-contained custom widget
 // ----------------------------------------------------
-// 🎯 Generic Custom Dropdown Widget
-// ----------------------------------------------------
 class CustomTaskDropdown<T> extends StatefulWidget {
-  /// The list of items (can be Sector, Department, or Weather)
   final List<T> items;
-
-  /// How to get the ID from an item
   final int Function(T) getId;
-
-  /// How to get the description text from an item
   final String Function(T) getDesc;
-
-  /// Optional label for the dropdown
   final String label;
-
-  final int initValue;
-
-  /// Called when value changes
+  final int? initValue;
   final void Function(int?)? onChanged;
-
-  /// Optional validator
   final String? Function(int?)? validator;
 
   const CustomTaskDropdown({
     super.key,
     required this.items,
-    required this.initValue,
+    this.initValue,
     required this.getId,
     required this.getDesc,
     this.label = "Select",
@@ -577,38 +631,66 @@ class CustomTaskDropdown<T> extends StatefulWidget {
 
 class _CustomTaskDropdownState<T> extends State<CustomTaskDropdown<T>> {
   int? _selectedValue;
+  bool _isDisabled = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.items.isNotEmpty) {
+
+    // If initValue matches an existing item, preselect and disable dropdown
+    if (widget.initValue != null &&
+        widget.items.any((e) => widget.getId(e) == widget.initValue)) {
       _selectedValue = widget.initValue;
+      _isDisabled = true;
+    } else {
+      _selectedValue = null;
+      _isDisabled = false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final dropdownItems = widget.items.map((item) {
-      return DropdownMenuItem<int>(
-        value: widget.getId(item),
-        child: Text(widget.getDesc(item)),
-      );
-    }).toList();
-
-    return DropdownButtonFormField<int>(
-      decoration: InputDecoration(
-        labelText: widget.label,
-        border: const OutlineInputBorder(),
+    // Add placeholder + actual items
+    final dropdownItems = [
+      const DropdownMenuItem<int>(
+        value: null,
+        child: Text(
+          "Select One of Choices",
+          style: TextStyle(color: Colors.grey),
+        ),
       ),
-      value: _selectedValue,
-      items: dropdownItems,
-      onChanged: (newValue) {
-        setState(() {
-          _selectedValue = newValue;
-        });
-        widget.onChanged?.call(newValue);
-      },
-      validator: widget.validator ?? (val) => val == null ? "Required" : null,
+      ...widget.items.map(
+        (item) => DropdownMenuItem<int>(
+          value: widget.getId(item),
+          child: Text(widget.getDesc(item)),
+        ),
+      ),
+    ];
+
+    return AbsorbPointer(
+      absorbing: _isDisabled, // 👈 disables touch input if true
+      child: Opacity(
+        opacity: _isDisabled ? 0.6 : 1.0, // visually indicate disabled state
+        child: DropdownButtonFormField<int>(
+          decoration: InputDecoration(
+            labelText: widget.label,
+            border: const OutlineInputBorder(),
+          ),
+          value: _selectedValue,
+          items: dropdownItems,
+          onChanged: _isDisabled
+              ? null
+              : (newValue) {
+                  setState(() {
+                    _selectedValue = newValue;
+                  });
+                  widget.onChanged?.call(newValue);
+                },
+          validator:
+              widget.validator ??
+              (val) => val == null ? "Please select one of the choices" : null,
+        ),
+      ),
     );
   }
 }
