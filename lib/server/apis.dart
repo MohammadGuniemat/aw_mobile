@@ -51,7 +51,33 @@ class _Post {
     print("📜 Response body: ${response.body}");
     return response;
   }
+
+// ✅ Update Sample
+  Future<http.Response> updateForm(
+    String token,int formId,
+    Map<String, dynamic> updatedSampleData,
+  ) async {
+    final url = Uri.parse('${Api.baseUrl}updateForm/$formId');
+    print("📤 updateSample URL: $url");
+    print("📦 Payload: ${jsonEncode(updatedSampleData)}");
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token', // optional if backend requires auth
+      },
+      body: jsonEncode(updatedSampleData),
+    );
+
+    print("📩 Response status: ${response.statusCode}");
+    print("📜 Response body: ${response.body}");
+    return response;
+  }
 }
+
+  
+
 
 class _Get {
   Future<http.Response> usersInfo() async {

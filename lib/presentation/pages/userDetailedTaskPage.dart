@@ -8,6 +8,7 @@ import 'package:aw_app/provider/auth_provider.dart';
 import 'package:aw_app/provider/data_provider.dart';
 import 'package:aw_app/provider/samplesProvider.dart';
 import 'package:aw_app/provider/task_provider.dart';
+import 'package:aw_app/server/apis.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:aw_app/models/taskModel.dart';
@@ -211,32 +212,65 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                             ),
                             IconButton(
                               onPressed: () async {
-                                final rfid = task.rFID!;
-                                final formData =
+                                try {
+                                  final rfid = task.rFID!;
+                                  final formData = Map<String, dynamic>.from(
                                     selectedFormValuesByRFID[rfid] ??
-                                    {
-                                      'DepartmentID': task.departmentID ?? -1,
-                                      'SectorID': task.sectorID ?? -1,
-                                      'WeatherID': task.weatherID ?? -1,
-                                    };
+                                        {
+                                          'DepartmentID':
+                                              task.departmentID ?? -1,
+                                          'SectorID': task.sectorID ?? -1,
+                                          'WeatherID': task.weatherID ?? -1,
+                                        },
+                                  );
 
-                                print(
-                                  "📝 Submitting for RFID: $rfid with data: $formData",
-                                );
+                                  print(
+                                    "📝 Submitting for RFID: $rfid with data: $formData",
+                                  );
 
-                                // Example placeholder for your API call
-                                // await _samplesProvider.submitTaskForm(_authProvider.token!, rfid, formData);
+                                  formData.removeWhere(
+                                    (key, value) => value == -1,
+                                  );
+                                  print("🧹 Cleaned formData: $formData");
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      "✅ Submitted RFID $rfid successfully!",
+                                  // Include RFID if backend expects it
+                                  // formData['RFID'] = rfid;
+
+                                  final response = await Api.post.updateForm(
+                                    _authProvider.token!,
+                                    rfid,
+                                    formData,
+                                  );
+
+                                  if (response.statusCode == 200) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "✅ Submitted RFID $rfid successfully!",
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "⚠️ Failed to submit RFID $rfid: ${response.statusCode}",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  print("❌ Error submitting RFID form: $e");
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "❌ Submission failed. Try again.",
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                }
                               },
-                              icon: const Icon(Icons.save),
-                              color: const Color.fromARGB(255, 2, 139, 251),
+                              icon: const Icon(Icons.send),
                             ),
                           ],
                         ),
