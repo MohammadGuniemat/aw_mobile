@@ -1,4 +1,5 @@
 import 'package:aw_app/models/dataStaticModel/Department.dart';
+import 'package:aw_app/models/dataStaticModel/Status.dart';
 import 'package:aw_app/models/dataStaticModel/Weather.dart';
 import 'package:aw_app/models/dataStaticModel/sector.dart';
 import 'package:aw_app/models/formSampleUpdate.dart';
@@ -48,12 +49,15 @@ class UserDetailedTasksPage extends StatefulWidget {
 }
 
 class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
+  Map<int, bool> _isSubmittingByRFID = {};
+
   late Future<List<TaskModel>> _tasksFuture;
   late TaskProvider _taskProvider;
   late AuthProvider _authProvider;
   late SamplesProvider _samplesProvider;
   late DataProvider _dataProvider;
   late List<Sector> _sectorsList;
+  late List<Status> _statusList;
   late List<Department> _departmentsList;
   late List<Weather> _weathersList;
   late Map<int, Map<String, int>> selectedFormValuesByRFID;
@@ -66,6 +70,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
     _samplesProvider = context.read<SamplesProvider>();
     _dataProvider = context.read<DataProvider>();
     _sectorsList = _dataProvider.sectors.toList().cast<Sector>();
+    _statusList = _dataProvider.status.toList().cast<Status>();
     _departmentsList = _dataProvider.departments.cast<Department>();
     _weathersList = _dataProvider.weather.toList().cast<Weather>();
     selectedFormValuesByRFID = {};
@@ -211,66 +216,94 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                               ),
                             ),
                             IconButton(
-                              onPressed: () async {
-                                try {
-                                  final rfid = task.rFID!;
-                                  final formData = Map<String, dynamic>.from(
-                                    selectedFormValuesByRFID[rfid] ??
-                                        {
-                                          'DepartmentID':
-                                              task.departmentID ?? -1,
-                                          'SectorID': task.sectorID ?? -1,
-                                          'WeatherID': task.weatherID ?? -1,
-                                        },
-                                  );
+                              onPressed: _isSubmittingByRFID[task.rFID] == true
+                                  ? null // disable while submitting
+                                  : () async {
+                                      setState(
+                                        () => _isSubmittingByRFID[task.rFID!] =
+                                            true,
+                                      );
 
-                                  print(
-                                    "📝 Submitting for RFID: $rfid with data: $formData",
-                                  );
+                                      try {
+                                        final rfid = task.rFID!;
+                                        final formData =
+                                            Map<String, dynamic>.from(
+                                              selectedFormValuesByRFID[rfid] ??
+                                                  {
+                                                    'DepartmentID':
+                                                        task.departmentID ?? -1,
+                                                    'SectorID':
+                                                        task.sectorID ?? -1,
+                                                    'StatusID':
+                                                        task.statusID ?? -1,
+                                                    'WeatherID':
+                                                        task.weatherID ?? -1,
+                                                  },
+                                            );
 
-                                  formData.removeWhere(
-                                    (key, value) => value == -1,
-                                  );
-                                  print("🧹 Cleaned formData: $formData");
+                                        print(
+                                          "📝 Submitting for RFID: $rfid with data: $formData",
+                                        );
+                                        formData.removeWhere((k, v) => v == -1);
 
-                                  // Include RFID if backend expects it
-                                  // formData['RFID'] = rfid;
+                                        final response = await Api.post
+                                            .updateForm(
+                                              _authProvider.token!,
+                                              rfid,
+                                              formData,
+                                            );
 
-                                  final response = await Api.post.updateForm(
-                                    _authProvider.token!,
-                                    rfid,
-                                    formData,
-                                  );
-
-                                  if (response.statusCode == 200) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          "✅ Submitted RFID $rfid successfully!",
-                                        ),
+                                        if (response.statusCode == 200) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                "✅ Submitted RFID $rfid successfully!",
+                                              ),
+                                            ),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                "⚠️ Failed to submit RFID $rfid: ${response.statusCode}",
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        print(
+                                          "❌ Error submitting RFID form: $e",
+                                        );
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "❌ Submission failed. Try again.",
+                                            ),
+                                          ),
+                                        );
+                                      } finally {
+                                        setState(
+                                          () =>
+                                              _isSubmittingByRFID[task.rFID!] =
+                                                  false,
+                                        );
+                                      }
+                                    },
+                              icon: _isSubmittingByRFID[task.rFID] == true
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
                                       ),
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          "⚠️ Failed to submit RFID $rfid: ${response.statusCode}",
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                } catch (e) {
-                                  print("❌ Error submitting RFID form: $e");
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "❌ Submission failed. Try again.",
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.send),
+                                    )
+                                  : const Icon(Icons.send, color: Colors.blue),
                             ),
                           ],
                         ),
@@ -423,6 +456,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                                   () => {
                                     'DepartmentID': -1,
                                     'SectorID': -1,
+                                    'StatusID': -1,
                                     'WeatherID': -1,
                                   },
                                 );
@@ -447,6 +481,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                                   () => {
                                     'DepartmentID': -1,
                                     'SectorID': -1,
+                                    'StatusID': -1,
                                     'WeatherID': -1,
                                   },
                                 );
@@ -471,6 +506,7 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                                   () => {
                                     'DepartmentID': -1,
                                     'SectorID': -1,
+                                    'StatusID': -1,
                                     'WeatherID': -1,
                                   },
                                 );
@@ -478,6 +514,31 @@ class _UserDetailedTasksPageState extends State<UserDetailedTasksPage> {
                                     id ?? -1;
                                 print(
                                   "✅ [RFID $rfid] Weather selected: ${selectedFormValuesByRFID[rfid]!['WeatherID']}",
+                                );
+                              },
+                            ),
+
+                            CustomTaskDropdown<Status>(
+                              items: _statusList,
+                              initValue: task.statusID,
+                              label: "Status *",
+                              getId: (s) => s.statusID,
+                              getDesc: (s) => s.statusDesc,
+                              onChanged: (id) {
+                                final rfid = task.rFID!;
+                                selectedFormValuesByRFID.putIfAbsent(
+                                  rfid,
+                                  () => {
+                                    'DepartmentID': -1,
+                                    'SectorID': -1,
+                                    'StatusID': -1,
+                                    'WeatherID': -1,
+                                  },
+                                );
+                                selectedFormValuesByRFID[rfid]!['StatusID'] =
+                                    id ?? -1;
+                                print(
+                                  "✅ [RFID $rfid] StatusID selected: ${selectedFormValuesByRFID[rfid]!['StatusID']}",
                                 );
                               },
                             ),

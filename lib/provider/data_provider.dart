@@ -10,7 +10,7 @@ import 'package:aw_app/models/dataStaticModel/governorate.dart';
 import 'package:aw_app/models/dataStaticModel/MethodUsed.dart';
 import 'package:aw_app/models/dataStaticModel/RFStatus.dart';
 import 'package:aw_app/models/dataStaticModel/sector.dart';
-import 'package:aw_app/models/dataStaticModel/status.dart';
+import 'package:aw_app/models/dataStaticModel/Status.dart';
 import 'package:aw_app/models/dataStaticModel/unit.dart';
 import 'package:aw_app/models/dataStaticModel/WaterSourceName.dart';
 // import 'package:aw_app/models/dataStaticModel/WaterSourceType.dart';
@@ -233,12 +233,25 @@ class DataProvider with ChangeNotifier {
   }
 
   Status? findStatusById(int? statusID) {
+    print("Status? findStatusById(int? statusID) $statusID");
     try {
       return _status.firstWhere((s) => s.statusID == statusID);
     } catch (e) {
       return null;
     }
   }
+
+  WaterSourceName? findWaterSourceIdByName(String name) {
+    try {
+      return _waterSourceNames.firstWhere(
+        (wsn) => wsn.waterSourceName == name,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+
 
   Weather? getWeatherById(int? wID) {
     print("🔎 getWeatherById called with: $wID (${wID.runtimeType})");

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:aw_app/core/theme/colors.dart';
+import 'package:aw_app/models/InsertSampleModel.dart';
 import 'package:aw_app/models/samplesResponse.dart' show SamplesResponse;
 import 'package:aw_app/models/WaterSourceTypeModel.dart' show WaterSourceType;
 import 'package:aw_app/presentation/pages/InsertSamplePage.dart';
@@ -165,8 +166,10 @@ class FormMoreDetails extends StatelessWidget {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) =>
-                                            EditSamplePage(rfid: rfid),
+                                        builder: (context) => UpdateSamplePage(
+                                          rfid: rfid,
+                                          existingSample: sample,
+                                        ),
                                       ),
                                     );
                                   },

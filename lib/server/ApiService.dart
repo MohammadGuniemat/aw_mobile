@@ -10,7 +10,7 @@ import 'package:aw_app/models/dataStaticModel/governorate.dart';
 import 'package:aw_app/models/dataStaticModel/MethodUsed.dart';
 import 'package:aw_app/models/dataStaticModel/RFStatus.dart';
 import 'package:aw_app/models/dataStaticModel/sector.dart';
-import 'package:aw_app/models/dataStaticModel/status.dart';
+import 'package:aw_app/models/dataStaticModel/Status.dart';
 import 'package:aw_app/models/dataStaticModel/unit.dart';
 import 'package:aw_app/models/dataStaticModel/WaterSourceName.dart';
 import 'package:aw_app/models/dataStaticModel/WaterType.dart';

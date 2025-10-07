@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:aw_app/models/InsertSampleModel.dart';
 import 'package:aw_app/models/samplesResponse.dart';
 import 'package:flutter/material.dart';
 import 'package:aw_app/server/apis.dart';
@@ -12,6 +13,8 @@ class SamplesProvider extends ChangeNotifier {
   bool get isSampleLoading => _isSampleLoading;
   // List<SamplesResponse>? get samplesList => _samplesList;
   List<SamplesResponse> get samplesList => _samplesList;
+
+  // InsertSampleModel pickedSample = InsertSampleModel();
 
   String get sampleProviderMsg => _sampleProviderMsg;
 

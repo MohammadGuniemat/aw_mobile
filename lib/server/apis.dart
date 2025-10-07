@@ -203,6 +203,26 @@ class _Get {
     return response;
   }
 
+  Future<http.Response> getSampleById(String token, int sample_id) async {
+    // Build the complete URL with query parameters
+    final url = Uri.parse('${Api.baseUrl}/samples/$sample_id');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    debugPrint("sample info Of sample_id $sample_id Sample Response: ${response.body}");
+
+    return response;
+  }
+
+
+
+
   Future<http.Response> getAnalysisType(String token, int sampleID) async {
     final url = Uri.parse('${Api.baseUrl}analysisTypes/$sampleID');
     
