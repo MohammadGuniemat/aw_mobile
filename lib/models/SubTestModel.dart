@@ -11,6 +11,8 @@ class SubTest {
   final String analysisTypeDesc;
   final String waterTypeName;
 
+  
+
   SubTest({
     required this.id,
     required this.symbol,

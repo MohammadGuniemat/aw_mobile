@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:aw_app/core/theme/colors.dart';
 import 'package:aw_app/models/dataStaticModel/FormWaterSourceType.dart';
 import 'package:aw_app/models/dataStaticModel/WaterSourceName.dart';
 import 'package:aw_app/models/samplesResponse.dart';
 import 'package:aw_app/presentation/pages/formMoreDetails.dart';
 import 'package:aw_app/presentation/widgets/analysisTypesWidget.dart';
+import 'package:aw_app/presentation/widgets/sampleWidgets/SampleDetailsWidget.dart';
 import 'package:aw_app/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:aw_app/server/apis.dart';
@@ -63,30 +66,83 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
     super.initState();
     notesController = TextEditingController();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final authProvider = context.read<AuthProvider>();
       final taskProvider = context.read<TaskProvider>();
+      final dataProvider = context.read<DataProvider>();
+
+      try {
+        // STEP 1: get analysis types for this sample
+        final response = await Api.get.getAnalysisType(
+          authProvider.token!,
+          widget.existingSample.sampleID!,
+        );
+
+        if (response.statusCode == 200) {
+          final List<dynamic> data = jsonDecode(response.body);
+          print("📦 Analysis Types from API: $data");
+
+          // Extract list of strings like ["Physical", "Chemical"]
+          final List<String> analysisTypeDescs = data
+              .map((item) => item['AnalysisTypeDesc'] as String)
+              .toList();
+
+          // STEP 2: map them to IDs using dataProvider
+          final List<int> matchedIDs = dataProvider.analysisTypes
+              .where(
+                (type) => analysisTypeDescs.contains(type.analysisTypeDesc),
+              )
+              .map((type) => type.analysisTypeID)
+              .toList();
+
+          // STEP 3: assign to selectedAnalysisType
+          setState(() {
+            selectedAnalysisType = matchedIDs;
+          });
+
+          print("✅ Mapped AnalysisTypeIDs: $selectedAnalysisType");
+        } else {
+          print("⚠️ Failed to fetch analysis types: ${response.body}");
+        }
+      } catch (e) {
+        print("❌ Error fetching analysis types: $e");
+      }
+
       final foundTask = taskProvider.tasks
           .where((t) => t.rFID == widget.rfid)
           .firstOrNull;
 
+      final foundSource = dataProvider.findWaterSourceIdByName(
+        widget.existingSample.location,
+      );
+
       setState(() {
         task = foundTask;
 
-        // ✅ Pre-fill data from existing sample
+        // ✅ Pre-fill existing sample data
         form_batchNo = widget.existingSample.batchNo;
-        form_notes = task!.notes;
+        form_notes = task?.notes ?? '';
         form_sampleStatus = widget.existingSample.sampleStatus;
         form_location = widget.existingSample.location;
-        form_samplewaterSourceTypeID = 1;
-        // widget.existingSample.sampleWaterSourceTypeID;
         form_subLocation = widget.existingSample.subLocation;
+        form_samplewaterSourceTypeID =
+            foundSource?.waterSourceTypeID ??
+            widget.existingSample.waterSourceTypeID;
+        _selectedWaterSourceNameID = foundSource?.waterSourceNameID;
+
+        notesController.text = form_notes ?? '';
+
+        // 🧠 Initialize analysis
         form_analysisTypeIDs = {
           1: {2: 'testAnalysis'},
         };
-        // widget.existingSample.analysisTypeIDs;
-
-        notesController.text = task!.notes.toString();
       });
+
+      // ✅ IMPORTANT: initialize sublocation logic
+      if (foundSource != null) {
+        _handleLocationChanged(foundSource.waterSourceNameID, dataProvider);
+        // This ensures _enableSampleSubRecords and _subLocationsList are set.
+      }
     });
   }
 
@@ -113,20 +169,26 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
 
     final typeID = selectedWST.waterSourceTypeID;
 
+    print("typeID77: $typeID");
+
     form_samplewaterSourceTypeID = typeID;
     form_location = selectedWST.waterSourceName;
 
     setState(() {
       if ([1, 2, 6].contains(typeID)) {
+        //خزان
         _enableSampleSubRecords = false;
         _subLocationsList = [];
       } else if ([3].contains(typeID)) {
+        //شبكة
         _enableSampleSubRecords = true;
         _subLocationsList = [];
       } else if ([4].contains(typeID)) {
+        //محطة تنقية
         _enableSampleSubRecords = true;
         _subLocationsList = ['In', 'Out'];
       } else if ([5].contains(typeID)) {
+        //محطة تحلية
         _enableSampleSubRecords = true;
         _subLocationsList = ['RO', 'Product', 'Well'];
       } else if ([7].contains(typeID)) {
@@ -136,7 +198,7 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
         _enableSampleSubRecords = false;
         _subLocationsList = [];
       }
-      form_subLocation = null;
+      form_subLocation = widget.existingSample.subLocation;
     });
   }
 
@@ -304,6 +366,7 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
         ?.waterSourceNameID;
     // ... (UI stays the same, just change titles and button text)
 
+    final authProv2 = context.read<AuthProvider>();
     return Scaffold(
       appBar: AppBar(
         title: Text("Update Sample with form#: ${widget.rfid}"),
@@ -319,6 +382,11 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
               // ⚙️ Everything same as Insert page — dropdowns, info cards, etc.
               // Just pre-fill using form_* variables
               // And button text / logic changed to call _submit()
+              SampleDetailsDropdown(
+                token: authProv2.token!,
+                waterTypeID: waterTypeID!,
+                analysisTypeID: 1,
+              ),
               Card(
                 elevation: 4,
                 margin: const EdgeInsets.only(bottom: 20),
@@ -464,6 +532,7 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
 
                       Text('sample88 $_selectedWaterSourceNameID'),
                       TextFormField(
+                        initialValue: form_batchNo,
                         decoration: const InputDecoration(
                           labelText: "Batch No",
                           border: OutlineInputBorder(),

@@ -124,7 +124,7 @@ class AnalysisTypesWidgetState extends State<AnalysisTypesWidget> {
                     filled: true,
                     fillColor: Colors.grey.shade100,
                   ),
-                  initialSelection: subTests.isNotEmpty ? subTests.first : null,
+                  initialSelection: null,
                   dropdownMenuEntries: subTests
                       .map(
                         (st) => DropdownMenuEntry<SubTest>(

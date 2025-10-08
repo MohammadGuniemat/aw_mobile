@@ -163,6 +163,7 @@ class FormMoreDetails extends StatelessWidget {
                               children: [
                                 IconButton(
                                   onPressed: () {
+                                    print("sample.batchNo ${sample.batchNo}");
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
