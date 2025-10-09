@@ -23,6 +23,7 @@ class SampleDetailsDropdown extends StatefulWidget {
 
 class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
   List<SubTestStringData> subTests = [];
+  List<Unit> units = [];
   SubTestStringData? selectedSubTest;
   bool isLoading = true;
   String? error;
@@ -50,6 +51,8 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
 
   Future<void> fetchSubTests() async {
     try {
+      // SAMPLE REAL VALUES FOR SUB TESTS FETCHING * * * * * * * * *
+      //[{"SubTestID":11,"SubTestSymbol":"Colour","SubTestName":"Colour","SubTestUnit":"TCU","SubTestMethodUsed":"Sensory Test","SubTestNationalStandardsA":"15","SubTestNationalStandardsB":null,"SubTestNationalStandardsC":null,"SubTestNationalStandardsD":null,"AnalysisTypeDesc":"Physical","WaterTypeName":"مياه شرب"},{
       final response = await Api.get.getSampleSubAndAnaly(
         widget.token,
         widget.waterTypeID,
@@ -121,6 +124,35 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
           ),
         ),
         const SizedBox(height: 16),
+
+
+
+        DropdownButtonFormField<Unit>(
+          value: selectedSubTest,
+          hint: const Text("Choose one"),
+          isExpanded: true,
+          items: subTests.map((subTest) {
+            return DropdownMenuItem(
+              value: subTest,
+              child: Text(subTest.subTestName),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() => selectedSubTest = value);
+          },
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+          ),
+        ),
+
+
+
+
+
         if (selectedSubTest != null) ...[
           Card(
             margin: const EdgeInsets.only(top: 10),
