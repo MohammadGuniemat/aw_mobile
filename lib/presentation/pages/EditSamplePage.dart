@@ -379,14 +379,6 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
           key: _formKey,
           child: ListView(
             children: [
-              // ⚙️ Everything same as Insert page — dropdowns, info cards, etc.
-              // Just pre-fill using form_* variables
-              // And button text / logic changed to call _submit()
-              SampleDetailsDropdown(
-                token: authProv2.token!,
-                waterTypeID: waterTypeID!,
-                analysisTypeID: 1,
-              ),
               Card(
                 elevation: 4,
                 margin: const EdgeInsets.only(bottom: 20),
@@ -588,10 +580,10 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
                         Row(
                           children: [
                             Expanded(
-                              child: AnalysisTypesWidget(
-                                key: analysis1Key,
-                                analysisId: 1,
-                                w_type: waterTypeID,
+                              child: SampleDetailsDropdown(
+                                token: authProv2.token!,
+                                analysisTypeID: 1,
+                                waterTypeID: waterTypeID!,
                               ),
                             ),
                             IconButton(
@@ -611,10 +603,10 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
                         Row(
                           children: [
                             Expanded(
-                              child: AnalysisTypesWidget(
-                                key: analysis2Key,
-                                analysisId: 2,
-                                w_type: waterTypeID,
+                              child: SampleDetailsDropdown(
+                                token: authProv2.token!,
+                                analysisTypeID: 2,
+                                waterTypeID: waterTypeID!,
                               ),
                             ),
                             IconButton(
@@ -634,10 +626,10 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
                         Row(
                           children: [
                             Expanded(
-                              child: AnalysisTypesWidget(
-                                key: analysis3Key,
-                                analysisId: 3,
-                                w_type: waterTypeID,
+                              child: SampleDetailsDropdown(
+                                token: authProv2.token!,
+                                analysisTypeID: 3,
+                                waterTypeID: waterTypeID!,
                               ),
                             ),
                             IconButton(

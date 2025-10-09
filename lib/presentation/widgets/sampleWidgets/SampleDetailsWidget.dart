@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:aw_app/models/sampleApiModels/SubTestStringData.dart';
 import 'package:aw_app/server/apis.dart';
+import 'package:aw_app/provider/data_provider.dart';
+import 'package:collection/collection.dart';
 
 class SampleDetailsDropdown extends StatefulWidget {
   final String token;
@@ -23,11 +26,26 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
   SubTestStringData? selectedSubTest;
   bool isLoading = true;
   String? error;
+  String? analysisName;
 
   @override
   void initState() {
     super.initState();
     fetchSubTests();
+
+    // ✅ Safely access Provider after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final dataProvider = context.read<DataProvider>();
+
+      final analysisNameList = dataProvider.analysisTypes.firstWhereOrNull(
+        (an) => an.analysisTypeID == widget.analysisTypeID,
+      );
+
+      setState(() {
+        analysisName =
+            analysisNameList?.analysisTypeDesc ?? 'Unknown analysisType';
+      });
+    });
   }
 
   Future<void> fetchSubTests() async {
@@ -72,10 +90,14 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Select a SubTest:",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
+        if (analysisName != null) ...[
+          Text(
+            'Analysis: $analysisName',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 10),
+        ],
+        const Text("Select a SubTest:", style: TextStyle(fontSize: 12)),
         const SizedBox(height: 8),
         DropdownButtonFormField<SubTestStringData>(
           value: selectedSubTest,
@@ -88,9 +110,7 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
             );
           }).toList(),
           onChanged: (value) {
-            setState(() {
-              selectedSubTest = value;
-            });
+            setState(() => selectedSubTest = value);
           },
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -104,6 +124,10 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
         if (selectedSubTest != null) ...[
           Card(
             margin: const EdgeInsets.only(top: 10),
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Text(
