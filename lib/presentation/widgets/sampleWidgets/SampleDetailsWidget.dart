@@ -1,9 +1,10 @@
+import 'package:aw_app/models/dataStaticModel/unit.dart';
+import 'package:aw_app/models/sampleApiModels/SubTestStringData.dart';
+import 'package:aw_app/provider/data_provider.dart';
+import 'package:aw_app/server/apis.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:aw_app/models/sampleApiModels/SubTestStringData.dart';
-import 'package:aw_app/server/apis.dart';
-import 'package:aw_app/provider/data_provider.dart';
-import 'package:collection/collection.dart';
 
 class SampleDetailsDropdown extends StatefulWidget {
   final String token;
@@ -25,6 +26,7 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
   List<SubTestStringData> subTests = [];
   List<Unit> units = [];
   SubTestStringData? selectedSubTest;
+  Unit? selectedUnit;
   bool isLoading = true;
   String? error;
   String? analysisName;
@@ -34,25 +36,24 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
     super.initState();
     fetchSubTests();
 
-    // ✅ Safely access Provider after first frame
+    // ✅ Load analysis name + units after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dataProvider = context.read<DataProvider>();
 
-      final analysisNameList = dataProvider.analysisTypes.firstWhereOrNull(
-        (an) => an.analysisTypeID == widget.analysisTypeID,
+      final analysis = dataProvider.analysisTypes.firstWhereOrNull(
+        (a) => a.analysisTypeID == widget.analysisTypeID,
       );
 
       setState(() {
-        analysisName =
-            analysisNameList?.analysisTypeDesc ?? 'Unknown analysisType';
+        analysisName = analysis?.analysisTypeDesc ?? 'Unknown Analysis';
+        units = dataProvider.units
+            .cast<Unit>(); // ✅ Assuming DataProvider provides this
       });
     });
   }
 
   Future<void> fetchSubTests() async {
     try {
-      // SAMPLE REAL VALUES FOR SUB TESTS FETCHING * * * * * * * * *
-      //[{"SubTestID":11,"SubTestSymbol":"Colour","SubTestName":"Colour","SubTestUnit":"TCU","SubTestMethodUsed":"Sensory Test","SubTestNationalStandardsA":"15","SubTestNationalStandardsB":null,"SubTestNationalStandardsC":null,"SubTestNationalStandardsD":null,"AnalysisTypeDesc":"Physical","WaterTypeName":"مياه شرب"},{
       final response = await Api.get.getSampleSubAndAnaly(
         widget.token,
         widget.waterTypeID,
@@ -100,20 +101,30 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
           ),
           const SizedBox(height: 10),
         ],
-        const Text("Select a SubTest:", style: TextStyle(fontSize: 12)),
+
+        const Text("Select a SubTest:", style: TextStyle(fontSize: 13)),
         const SizedBox(height: 8),
+
+        /// SubTest Dropdown
         DropdownButtonFormField<SubTestStringData>(
           value: selectedSubTest,
-          hint: const Text("Choose one"),
+          hint: const Text("Choose SubTest"),
           isExpanded: true,
           items: subTests.map((subTest) {
-            return DropdownMenuItem(
+            return DropdownMenuItem<SubTestStringData>(
               value: subTest,
               child: Text(subTest.subTestName),
             );
           }).toList(),
           onChanged: (value) {
-            setState(() => selectedSubTest = value);
+            setState(() {
+              selectedSubTest = value;
+
+              // Auto-select unit if available in the subTest data
+              selectedUnit = units.firstWhereOrNull(
+                (u) => u.unitName == value?.subTestUnit,
+              );
+            });
           },
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -123,36 +134,37 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
             ),
           ),
         ),
+
+        const SizedBox(height: 16),
+        const Text("Select a Unit:", style: TextStyle(fontSize: 13)),
+        const SizedBox(height: 8),
+
+        /// Unit Dropdown
+        DropdownButtonFormField<Unit>(
+          value: selectedUnit,
+          hint: const Text("Choose Unit"),
+          isExpanded: true,
+          items: units.map((unit) {
+            return DropdownMenuItem<Unit>(
+              value: unit,
+              child: Text(unit.unitName),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() => selectedUnit = value);
+          },
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+          ),
+        ),
+
         const SizedBox(height: 16),
 
-
-
-        DropdownButtonFormField<Unit>(
-          value: selectedSubTest,
-          hint: const Text("Choose one"),
-          isExpanded: true,
-          items: subTests.map((subTest) {
-            return DropdownMenuItem(
-              value: subTest,
-              child: Text(subTest.subTestName),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() => selectedSubTest = value);
-          },
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-          ),
-        ),
-
-
-
-
-
+        /// Details Card
         if (selectedSubTest != null) ...[
           Card(
             margin: const EdgeInsets.only(top: 10),

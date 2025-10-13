@@ -243,15 +243,11 @@ class DataProvider with ChangeNotifier {
 
   WaterSourceName? findWaterSourceIdByName(String name) {
     try {
-      return _waterSourceNames.firstWhere(
-        (wsn) => wsn.waterSourceName == name,
-      );
+      return _waterSourceNames.firstWhere((wsn) => wsn.waterSourceName == name);
     } catch (e) {
       return null;
     }
   }
-
-
 
   Weather? getWeatherById(int? wID) {
     print("🔎 getWeatherById called with: $wID (${wID.runtimeType})");
