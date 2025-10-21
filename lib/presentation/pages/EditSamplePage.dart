@@ -22,7 +22,7 @@ import 'package:aw_app/provider/task_provider.dart';
 class UpdateSamplePage extends StatefulWidget {
   final rfid;
   final SamplesResponse
-  existingSample; // 👈 Pass existing SamplesResponse sample to update
+  existingSample; // 👈 Pass existing SamplesResponse.. sample to update
 
   const UpdateSamplePage({
     required this.rfid,
@@ -380,12 +380,12 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
           child: ListView(
             children: [
               Card(
-                elevation: 4,
+                elevation: 2,
                 margin: const EdgeInsets.only(bottom: 20),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Form & Sample Information",
@@ -397,17 +397,117 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      _buildInfoCard("Department", department ?? ''),
-                      _buildInfoCard("Task Name", task!.rFName ?? ''),
-                      _buildInfoCard("Governorate", governorate ?? ''),
-                      _buildInfoCard("Area", area ?? ''),
-                      _buildInfoCard("Water Source", concatingWaterSourceName),
-                      _buildInfoCard("Water Type", waterType ?? ''),
-                      _buildInfoCard("Collector", user ?? ''),
-                      _buildInfoCard("Weather", weather ?? ''),
-                      _buildInfoCard("Status", status ?? ''),
-                      _buildInfoCard("Sector", sector ?? ''),
-                      if (notes.isNotEmpty) _buildInfoCard("Notes", notes),
+                      RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                            height: 1.5,
+                          ),
+                          children: [
+                            const TextSpan(text: "This form name is "),
+                            TextSpan(
+                              text: task?.rFName?.trim().isNotEmpty == true
+                                  ? task!.rFName!.trim()
+                                  : "Not Available",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const TextSpan(text: " for the department "),
+                            TextSpan(
+                              text: department?.trim().isNotEmpty == true
+                                  ? department!.trim()
+                                  : "Not Available",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const TextSpan(text: " from governorate "),
+                            TextSpan(
+                              text: governorate?.trim().isNotEmpty == true
+                                  ? governorate!.trim()
+                                  : "Not Available",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const TextSpan(text: " in area "),
+                            TextSpan(
+                              text: area?.trim().isNotEmpty == true
+                                  ? area!.trim()
+                                  : "Not Available",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const TextSpan(text: ". The water source is "),
+                            TextSpan(
+                              text: concatingWaterSourceName.trim().isNotEmpty
+                                  ? concatingWaterSourceName.trim()
+                                  : "Not Available",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const TextSpan(text: " and water type is "),
+                            TextSpan(
+                              text: waterType?.trim().isNotEmpty == true
+                                  ? waterType!.trim()
+                                  : "Not Available",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const TextSpan(text: ".\nCollected by "),
+                            TextSpan(
+                              text: user?.trim().isNotEmpty == true
+                                  ? user!.trim()
+                                  : "Not Available",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const TextSpan(text: " with weather conditions "),
+                            TextSpan(
+                              text: weather?.trim().isNotEmpty == true
+                                  ? weather!.trim()
+                                  : "Not Available",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const TextSpan(text: ".\nIt belongs to sector "),
+                            TextSpan(
+                              text: sector?.trim().isNotEmpty == true
+                                  ? sector!.trim()
+                                  : "Not Available",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const TextSpan(text: " with status "),
+                            TextSpan(
+                              text: status?.trim().isNotEmpty == true
+                                  ? status!.trim()
+                                  : "Not Available",
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -522,7 +622,7 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
                       // ==================================
                       const SizedBox(height: 16),
 
-                      Text('sample88 $_selectedWaterSourceNameID'),
+                      // Text('sample88 $_selectedWaterSourceNameID'),
                       TextFormField(
                         initialValue: form_batchNo,
                         decoration: const InputDecoration(
@@ -552,179 +652,202 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
                       const SizedBox(height: 20),
 
                       // Test Types Dropdown
-                      DropdownMenu<int>(
-                        width: 300,
-                        label: const Text("Select Analysis Type"),
-                        dropdownMenuEntries: dataProvider.analysisTypes
-                            .map(
-                              (type) => DropdownMenuEntry<int>(
-                                value: type.analysisTypeID,
-                                label: type.analysisTypeDesc,
-                              ),
-                            )
-                            .toList(),
-                        onSelected: (value) {
-                          print("Selected AnalysisType ID: $value");
+                      // DropdownMenu<int>(
+                      //   width: 300,
+                      //   label: const Text("Select Analysis Type"),
+                      //   dropdownMenuEntries: dataProvider.analysisTypes
+                      //       .map(
+                      //         (type) => DropdownMenuEntry<int>(
+                      //           value: type.analysisTypeID,
+                      //           label: type.analysisTypeDesc,
+                      //         ),
+                      //       )
+                      //       .toList(),
+                      //   onSelected: (value) {
+                      //     print("Selected AnalysisType ID: $value");
 
-                          if (!selectedAnalysisType.contains(value!)) {
-                            setState(() {
-                              selectedAnalysisType.add(value!);
-                            });
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 20),
+                      //     if (!selectedAnalysisType.contains(value!)) {
+                      //       setState(() {
+                      //         selectedAnalysisType.add(value!);
+                      //       });
+                      //     }
+                      //   },
+                      // ),
+                      // const SizedBox(height: 20),
 
-                      // AnalysisTypeWidget renderings
-                      if (selectedAnalysisType.contains(1))
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SampleDetailsDropdown(
-                                token: authProv2.token!,
-                                analysisTypeID: 1,
-                                waterTypeID: waterTypeID!,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                if (analysis1Key.currentState != null) {
-                                  analysis1Key.currentState!.clearAllSubTests();
-                                }
-                                setState(() {
-                                  selectedAnalysisType.remove(1);
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      if (selectedAnalysisType.contains(2))
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SampleDetailsDropdown(
-                                token: authProv2.token!,
-                                analysisTypeID: 2,
-                                waterTypeID: waterTypeID!,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                if (analysis2Key.currentState != null) {
-                                  analysis2Key.currentState!.clearAllSubTests();
-                                }
-                                setState(() {
-                                  selectedAnalysisType.remove(2);
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      if (selectedAnalysisType.contains(3))
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SampleDetailsDropdown(
-                                token: authProv2.token!,
-                                analysisTypeID: 3,
-                                waterTypeID: waterTypeID!,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                if (analysis3Key.currentState != null) {
-                                  analysis3Key.currentState!.clearAllSubTests();
-                                }
-                                setState(() {
-                                  selectedAnalysisType.remove(3);
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-
+                      // // AnalysisTypeWidget renderings
+                      // if (selectedAnalysisType.contains(1))
+                      //   Row(
+                      //     children: [
+                      //       Expanded(
+                      //         child: SampleDetailsDropdown(
+                      //           token: authProv2.token!,
+                      //           analysisTypeID: 1,
+                      //           waterTypeID: waterTypeID!,
+                      //         ),
+                      //       ),
+                      //       IconButton(
+                      //         icon: const Icon(Icons.delete, color: Colors.red),
+                      //         onPressed: () {
+                      //           if (analysis1Key.currentState != null) {
+                      //             analysis1Key.currentState!.clearAllSubTests();
+                      //           }
+                      //           setState(() {
+                      //             selectedAnalysisType.remove(1);
+                      //           });
+                      //         },
+                      //       ),
+                      //     ],
+                      //   ),
+                      // if (selectedAnalysisType.contains(2))
+                      //   Row(
+                      //     children: [
+                      //       Expanded(
+                      //         child: SampleDetailsDropdown(
+                      //           token: authProv2.token!,
+                      //           analysisTypeID: 2,
+                      //           waterTypeID: waterTypeID!,
+                      //         ),
+                      //       ),
+                      //       IconButton(
+                      //         icon: const Icon(Icons.delete, color: Colors.red),
+                      //         onPressed: () {
+                      //           if (analysis2Key.currentState != null) {
+                      //             analysis2Key.currentState!.clearAllSubTests();
+                      //           }
+                      //           setState(() {
+                      //             selectedAnalysisType.remove(2);
+                      //           });
+                      //         },
+                      //       ),
+                      //     ],
+                      //   ),
+                      // if (selectedAnalysisType.contains(3))
+                      //   Row(
+                      //     children: [
+                      //       Expanded(
+                      //         child: SampleDetailsDropdown(
+                      //           token: authProv2.token!,
+                      //           analysisTypeID: 3,
+                      //           waterTypeID: waterTypeID!,
+                      //         ),
+                      //       ),
+                      //       IconButton(
+                      //         icon: const Icon(Icons.delete, color: Colors.red),
+                      //         onPressed: () {
+                      //           if (analysis3Key.currentState != null) {
+                      //             analysis3Key.currentState!.clearAllSubTests();
+                      //           }
+                      //           setState(() {
+                      //             selectedAnalysisType.remove(3);
+                      //           });
+                      //         },
+                      //       ),
+                      //     ],
+                      //   ),
                       const SizedBox(height: 20),
 
                       // You'll need to use setState for this if it's not already a state variable:
                       // String? _selectedSampleStatus;
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: "Sample Status *",
-                          border: OutlineInputBorder(),
-                          filled: true,
-                          fillColor: Colors.white,
-                        ),
-                        // Use the form variable to hold the value
-                        value: form_sampleStatus,
-                        items: Samplestatus.sampleStatusList
-                            .map(
-                              (status) => DropdownMenuItem(
-                                value: status,
-                                child: Text(status),
-                              ),
-                            )
-                            .toList(),
+                    ],
+                  ),
+                ),
+              ),
 
-                        onChanged: (val) {
-                          // Use setState to update the UI and the form variable
-                          setState(() {
-                            form_sampleStatus = val;
-                          });
-                        },
-
-                        // The validator goes here, directly in the widget definition
-                        validator: (val) => val == null ? "Required" : null,
-
-                        // The onSaved callback goes here
-                        onSaved: (val) => form_sampleStatus = val,
-                      ),
-                      const SizedBox(height: 20),
-
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: () => _submit(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[700],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            "Submit Sample",
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ),
+              /// building Card For Sample SubTests
+              ///
+              /// Physical SampleSubTests
+              Card(
+                elevation: 2,
+                margin: const EdgeInsets.only(top: 20, bottom: 20),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text("PHYSICAL", style: TextStyle(fontSize: 20)),
+                      SampleDetailsDropdown(
+                        token: authProv2.token!,
+                        sampleID: widget.existingSample.sampleID,
+                        waterTypeID: waterTypeID!,
+                        filter: 1,
                       ),
                     ],
                   ),
                 ),
               ),
 
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () => _submit(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange[700],
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    "Update Sample",
-                    style: TextStyle(fontSize: 16),
+              /// Chemical SampleSubTests
+              Card(
+                elevation: 2,
+                margin: const EdgeInsets.only(top: 20, bottom: 20),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text("Chemical", style: TextStyle(fontSize: 20)),
+                      SampleDetailsDropdown(
+                        token: authProv2.token!,
+                        sampleID: widget.existingSample.sampleID,
+                        waterTypeID: waterTypeID!,
+
+                        filter: 2,
+                      ),
+                    ],
                   ),
                 ),
               ),
+
+              /// microbiological SampleSubTests
+              Card(
+                elevation: 2,
+                margin: const EdgeInsets.only(top: 20, bottom: 20),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text("Microbiological", style: TextStyle(fontSize: 20)),
+                      SampleDetailsDropdown(
+                        token: authProv2.token!,
+                        sampleID: widget.existingSample.sampleID,
+                        waterTypeID: waterTypeID!,
+
+                        filter: 3,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: "Sample Status *",
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                // Use the form variable to hold the value
+                value: form_sampleStatus,
+                items: Samplestatus.sampleStatusList
+                    .map(
+                      (status) =>
+                          DropdownMenuItem(value: status, child: Text(status)),
+                    )
+                    .toList(),
+
+                onChanged: (val) {
+                  // Use setState to update the UI and the form variable
+                  setState(() {
+                    form_sampleStatus = val;
+                  });
+                },
+
+                // The validator goes here, directly in the widget definition
+                validator: (val) => val == null ? "Required" : null,
+
+                // The onSaved callback goes here
+                onSaved: (val) => form_sampleStatus = val,
+              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),

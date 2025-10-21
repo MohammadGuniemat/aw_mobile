@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:aw_app/models/sampleApiModels/SubTestStringData.dart';
+import 'package:aw_app/models/sampleApiModels/SampleSubTests.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -105,6 +106,43 @@ class _Get {
       throw Exception('Failed to load SubTests: ${response.statusCode}');
     }
   }
+
+
+
+
+Future<List<SampleSubTests>> getSampleSubTestsList(
+  String token,
+  int sampleID,
+) async {
+  final url = Uri.parse('${Api.baseUrl}analysisAndSubtest/$sampleID');
+
+  final response = await http.get(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  debugPrint("SubTests for Sample $sampleID is: ${response.body}");
+
+  if (response.statusCode == 200) {
+    final Map<String, dynamic> decoded = jsonDecode(response.body);
+
+    // Extract the SAMPLE_DATA array
+    final List<dynamic> dataList = decoded['SAMPLE_DATA'] ?? [];
+
+    // Map each item to SampleSubTests
+    final List<SampleSubTests> subTests =
+        dataList.map((e) => SampleSubTests.fromJson(e)).toList();
+
+    return subTests;
+  } else {
+    throw Exception('Failed to load SubTests: ${response.statusCode}');
+  }
+}
+
+
 
   Future<http.Response> usersInfo() async {
     final url = Uri.parse('${Api.baseUrl}${Api.usersInfoEndpoint}');
