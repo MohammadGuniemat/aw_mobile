@@ -1,11 +1,10 @@
 import 'dart:convert';
-
 import 'package:aw_app/core/theme/colors.dart';
 import 'package:aw_app/models/dataStaticModel/FormWaterSourceType.dart';
 import 'package:aw_app/models/dataStaticModel/WaterSourceName.dart';
 import 'package:aw_app/models/samplesResponse.dart';
 import 'package:aw_app/presentation/pages/formMoreDetails.dart';
-import 'package:aw_app/presentation/widgets/analysisTypesWidget.dart';
+import 'package:aw_app/presentation/widgets/sampleWidgets/SampleDetailsWidget.dart';
 import 'package:aw_app/presentation/widgets/sampleWidgets/SampleDetailsWidget.dart';
 import 'package:aw_app/provider/auth_provider.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +17,10 @@ import 'package:aw_app/core/constants/SampleStatus.dart';
 import 'package:collection/collection.dart';
 import 'package:aw_app/models/taskModel.dart';
 import 'package:aw_app/provider/task_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'dart:io';
+import 'dart:typed_data'; // ✅ Add this
 
 class UpdateSamplePage extends StatefulWidget {
   final rfid;
@@ -35,12 +38,14 @@ class UpdateSamplePage extends StatefulWidget {
 }
 
 class _UpdateSamplePageState extends State<UpdateSamplePage> {
-  final GlobalKey<AnalysisTypesWidgetState> analysis1Key =
-      GlobalKey<AnalysisTypesWidgetState>();
-  final GlobalKey<AnalysisTypesWidgetState> analysis2Key =
-      GlobalKey<AnalysisTypesWidgetState>();
-  final GlobalKey<AnalysisTypesWidgetState> analysis3Key =
-      GlobalKey<AnalysisTypesWidgetState>();
+  Uint8List? sampleImageBytes; // Holds existing or newly picked image
+  // Add keys
+  final GlobalKey<SampleDetailsDropdownState> subAnalysis1Key =
+      GlobalKey<SampleDetailsDropdownState>();
+  final GlobalKey<SampleDetailsDropdownState> subAnalysis2Key =
+      GlobalKey<SampleDetailsDropdownState>();
+  final GlobalKey<SampleDetailsDropdownState> subAnalysis3Key =
+      GlobalKey<SampleDetailsDropdownState>();
 
   final _formKey = GlobalKey<FormState>();
   TaskModel? task;
@@ -65,6 +70,9 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
   void initState() {
     super.initState();
     notesController = TextEditingController();
+
+    // Initialize image bytes from existing sample
+    sampleImageBytes = widget.existingSample.sampleImageBytes;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final authProvider = context.read<AuthProvider>();
@@ -203,60 +211,67 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
   }
 
   // === Submit update instead of insert ===
-  void _submit(BuildContext context) {
-    print("=== UPDATE SAMPLE START ===");
-
-    final authProvider = context.read<AuthProvider>();
-    final sampleProvider = context.read<SamplesProvider>();
-    final token = authProvider.token ?? '';
-    form_sampleStatusOwner = authProvider.userID;
-
+  void _submit() {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-
-      final updatedSample = InsertSampleModel(
-        batchNo: form_batchNo ?? 'N/A',
-        notes: form_notes ?? '',
-        rfid: widget.rfid,
-        sampleStatus: form_sampleStatus ?? 'N/A',
-        sampleStatusOwner: form_sampleStatusOwner ?? 0,
-        analysisTypeIDs: form_analysisTypeIDs ?? {},
-        location: form_location ?? 'N/A',
-        sampleWaterSourceTypeID: form_samplewaterSourceTypeID ?? 0,
-        subLocation: form_subLocation ?? 'N/A',
+      _formKey.currentState!.save(); // Save all form field values
+      print(
+        "Rsult analysis1Key.currentState : ${subAnalysis1Key.currentState}",
       );
+      print(
+        "Rsult analysis2Key.currentState : ${subAnalysis2Key.currentState}",
+      );
+      print(
+        " Rsult analysis3Key.currentState : ${subAnalysis3Key.currentState}",
+      );
+      // ✅ Collect analysis maps
+      Map<int, Map<int, String>> analysisMap = {};
+      if (subAnalysis1Key.currentState != null) {
+        analysisMap.addAll(subAnalysis1Key.currentState!.getAnalysisMap());
+      }
+      if (subAnalysis2Key.currentState != null) {
+        analysisMap.addAll(subAnalysis2Key.currentState!.getAnalysisMap());
+      }
+      if (subAnalysis3Key.currentState != null) {
+        analysisMap.addAll(subAnalysis3Key.currentState!.getAnalysisMap());
+      }
 
-      final updatedMap = updatedSample.toJson();
+      form_analysisTypeIDs = analysisMap;
 
-      print("🚀 Sending updated sample to API:");
-      updatedMap.forEach((k, v) => print("  $k: $v"));
+      print("UPDATE analysisMap ${form_analysisTypeIDs ?? 'N/A'}");
 
-      // try {
-      //   // 👇 Use update endpoint here
-      //   final response =
-      //       await Api.post.updateSample(token, widget.existingSample.sampleID!, updatedMap);
+      print("=== UPDATE SAMPLE START ===");
+      // RFID:1436
+      print("RFID: ${widget.rfid}");
+      // BatchNo: "B205"
+      print("Batch No: ${form_batchNo ?? 'N/A'}");
+      // Notes:"من ادمن جمع العين"
+      print("Notes: ${form_notes ?? 'N/A'}");
+      // SampleStatus: "DRAFT"
+      print("Sample Status: ${form_sampleStatus ?? 'N/A'}");
+      // SampleStatusOwner: ""
+      print("Sample Status Owner: ${form_sampleStatusOwner ?? 'N/A'}");
+      // location: "محطة تحلية بئر مذكور"
+      print("Location: ${form_location ?? 'N/A'}");
+      // sub_location: "Product"
+      print("Sub Location: ${form_subLocation ?? 'N/A'}");
+      // sample_WaterSourceTypeID: 5
+      print(
+        "Sample Water Source Type ID: ${form_samplewaterSourceTypeID ?? 'N/A'}",
+      );
+      // analysisTypeIDs: {}
+      print("Selected Analysis Types IDs: $selectedAnalysisType");
+      print("Image attached: ${sampleImageBytes != null ? 'Yes' : 'No'}");
 
-      //   if (response.statusCode == 200) {
-      //     await sampleProvider.setListOfFormSamples(token, widget.rfid);
-      //     Navigator.of(context).pushReplacement(
-      //       MaterialPageRoute(
-      //         builder: (context) => FormMoreDetails(rfid: widget.rfid),
-      //       ),
-      //     );
-      //     ScaffoldMessenger.of(context).showSnackBar(
-      //       const SnackBar(content: Text("✅ Sample updated successfully!")),
-      //     );
-      //   } else {
-      //     ScaffoldMessenger.of(context).showSnackBar(
-      //       SnackBar(content: Text("⚠️ Failed: ${response.body}")),
-      //     );
-      //   }
-      // } catch (e) {
-      //   print("❌ API error: $e");
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(content: Text("❌ Error while updating sample")),
-      //   );
-      // }
+      print("=== UPDATE SAMPLE END ===");
+      // AnalysedAt: [{11: "2025-02-02T21:00:00.000Z"}, {13: "2028-08-25T21:00:00.000Z"}, {28: "2028-08-25T21:00:00.000Z"}]
+      // Methods: [{11: 7}, {13: 8}, {28: 9}]
+      // Units: [{11: 7}, {13: 8}, {28: 9}]
+      // labFields: {}
+      // sampleID: 1252
+
+      // call img uploader API sampleImageBytes
+    } else {
+      print("Form validation failed! Please check required fields.");
     }
   }
 
@@ -651,100 +666,6 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
 
                       const SizedBox(height: 20),
 
-                      // Test Types Dropdown
-                      // DropdownMenu<int>(
-                      //   width: 300,
-                      //   label: const Text("Select Analysis Type"),
-                      //   dropdownMenuEntries: dataProvider.analysisTypes
-                      //       .map(
-                      //         (type) => DropdownMenuEntry<int>(
-                      //           value: type.analysisTypeID,
-                      //           label: type.analysisTypeDesc,
-                      //         ),
-                      //       )
-                      //       .toList(),
-                      //   onSelected: (value) {
-                      //     print("Selected AnalysisType ID: $value");
-
-                      //     if (!selectedAnalysisType.contains(value!)) {
-                      //       setState(() {
-                      //         selectedAnalysisType.add(value!);
-                      //       });
-                      //     }
-                      //   },
-                      // ),
-                      // const SizedBox(height: 20),
-
-                      // // AnalysisTypeWidget renderings
-                      // if (selectedAnalysisType.contains(1))
-                      //   Row(
-                      //     children: [
-                      //       Expanded(
-                      //         child: SampleDetailsDropdown(
-                      //           token: authProv2.token!,
-                      //           analysisTypeID: 1,
-                      //           waterTypeID: waterTypeID!,
-                      //         ),
-                      //       ),
-                      //       IconButton(
-                      //         icon: const Icon(Icons.delete, color: Colors.red),
-                      //         onPressed: () {
-                      //           if (analysis1Key.currentState != null) {
-                      //             analysis1Key.currentState!.clearAllSubTests();
-                      //           }
-                      //           setState(() {
-                      //             selectedAnalysisType.remove(1);
-                      //           });
-                      //         },
-                      //       ),
-                      //     ],
-                      //   ),
-                      // if (selectedAnalysisType.contains(2))
-                      //   Row(
-                      //     children: [
-                      //       Expanded(
-                      //         child: SampleDetailsDropdown(
-                      //           token: authProv2.token!,
-                      //           analysisTypeID: 2,
-                      //           waterTypeID: waterTypeID!,
-                      //         ),
-                      //       ),
-                      //       IconButton(
-                      //         icon: const Icon(Icons.delete, color: Colors.red),
-                      //         onPressed: () {
-                      //           if (analysis2Key.currentState != null) {
-                      //             analysis2Key.currentState!.clearAllSubTests();
-                      //           }
-                      //           setState(() {
-                      //             selectedAnalysisType.remove(2);
-                      //           });
-                      //         },
-                      //       ),
-                      //     ],
-                      //   ),
-                      // if (selectedAnalysisType.contains(3))
-                      //   Row(
-                      //     children: [
-                      //       Expanded(
-                      //         child: SampleDetailsDropdown(
-                      //           token: authProv2.token!,
-                      //           analysisTypeID: 3,
-                      //           waterTypeID: waterTypeID!,
-                      //         ),
-                      //       ),
-                      //       IconButton(
-                      //         icon: const Icon(Icons.delete, color: Colors.red),
-                      //         onPressed: () {
-                      //           if (analysis3Key.currentState != null) {
-                      //             analysis3Key.currentState!.clearAllSubTests();
-                      //           }
-                      //           setState(() {
-                      //             selectedAnalysisType.remove(3);
-                      //           });
-                      //         },
-                      //       ),
-                      //     ],
-                      //   ),
                       const SizedBox(height: 20),
 
                       // You'll need to use setState for this if it's not already a state variable:
@@ -766,6 +687,7 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
                     children: [
                       Text("PHYSICAL", style: TextStyle(fontSize: 20)),
                       SampleDetailsDropdown(
+                        key: subAnalysis1Key, // ✅ Attach key
                         token: authProv2.token!,
                         sampleID: widget.existingSample.sampleID,
                         waterTypeID: waterTypeID!,
@@ -786,6 +708,7 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
                     children: [
                       Text("Chemical", style: TextStyle(fontSize: 20)),
                       SampleDetailsDropdown(
+                        key: subAnalysis2Key, // ✅ Attach key
                         token: authProv2.token!,
                         sampleID: widget.existingSample.sampleID,
                         waterTypeID: waterTypeID!,
@@ -807,6 +730,7 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
                     children: [
                       Text("Microbiological", style: TextStyle(fontSize: 20)),
                       SampleDetailsDropdown(
+                        key: subAnalysis3Key, // ✅ Attach key
                         token: authProv2.token!,
                         sampleID: widget.existingSample.sampleID,
                         waterTypeID: waterTypeID!,
@@ -848,8 +772,119 @@ class _UpdateSamplePageState extends State<UpdateSamplePage> {
                 onSaved: (val) => form_sampleStatus = val,
               ),
               const SizedBox(height: 20),
+
+              buildSampleImageUploader(),
+
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity, // Makes button full-width
+                child: ElevatedButton(
+                  onPressed: () {
+                    print("Button pressed");
+                    _submit();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange[700], // Button color
+                    foregroundColor: Colors.white, // Text color
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                    ), // Button height
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        12,
+                      ), // Rounded corners
+                    ),
+                    elevation: 4, // Shadow
+                  ),
+                  child: const Text(
+                    "SUBMIT",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildSampleImageUploader() {
+    final ImagePicker picker = ImagePicker();
+
+    Future<void> pickAndSet(ImageSource source) async {
+      final picked = await picker.pickImage(source: source, imageQuality: 80);
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          sampleImageBytes = bytes;
+        });
+      }
+    }
+
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      margin: const EdgeInsets.only(top: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Sample Image",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueAccent,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            sampleImageBytes != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(
+                      sampleImageBytes!,
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Container(
+                    height: 150,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'No image selected',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+            const SizedBox(height: 10),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.photo_library_outlined),
+                  label: const Text("Gallery"),
+                  onPressed: () => pickAndSet(ImageSource.gallery),
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.camera_alt_outlined),
+                  label: const Text("Camera"),
+                  onPressed: () => pickAndSet(ImageSource.camera),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

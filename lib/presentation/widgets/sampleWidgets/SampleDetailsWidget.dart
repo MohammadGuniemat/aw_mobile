@@ -1,11 +1,13 @@
-import 'dart:convert';
+// ignore_for_file: use_build_context_synchronously
+import 'dart:io';
 import 'package:aw_app/models/sampleApiModels/SubTestStringData.dart';
-import 'package:aw_app/provider/data_provider.dart';
-import 'package:flutter/material.dart';
 import 'package:aw_app/models/sampleApiModels/SampleSubTests.dart';
-import 'package:aw_app/models/dataStaticModel/unit.dart';
 import 'package:aw_app/models/dataStaticModel/MethodUsed.dart';
+import 'package:aw_app/models/dataStaticModel/unit.dart';
+import 'package:aw_app/provider/data_provider.dart';
 import 'package:aw_app/server/apis.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class SampleDetailsDropdown extends StatefulWidget {
@@ -23,40 +25,36 @@ class SampleDetailsDropdown extends StatefulWidget {
   });
 
   @override
-  State<SampleDetailsDropdown> createState() => _SampleDetailsDropdownState();
+  State<SampleDetailsDropdown> createState() => SampleDetailsDropdownState();
 }
 
-class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
+class SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
   List<Unit> units = [];
   List<MethodUsed> methodsUsed = [];
   List<SampleSubTests> subTests = [];
   List<SubTestStringData> allSubTests = [];
+  int? selectedNewSubTestID;
 
   bool isLoading = true;
   String? error;
 
-  // Helper to safely trim text
   String safeText(String? value) =>
       (value?.trim().isNotEmpty ?? false) ? value!.trim() : 'Not Available';
 
   @override
   void initState() {
     super.initState();
-
-    // Safe access to Provider after widget mounts
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dataProvider = Provider.of<DataProvider>(context, listen: false);
       setState(() {
         units = dataProvider.units;
         methodsUsed = dataProvider.methodUsed;
       });
-
       fetchAllSubTests();
       fetchSubTests();
     });
   }
 
-  // Fetch all subtests for water type and analysis type
   Future<void> fetchAllSubTests() async {
     try {
       final response = await Api.get.getSampleSubAndAnaly(
@@ -64,19 +62,12 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
         widget.waterTypeID,
         widget.filter,
       );
-
       if (!mounted) return;
-
       setState(() {
         allSubTests = response.whereType<SubTestStringData>().toList();
         isLoading = false;
       });
-
-      debugPrint(
-        'Fetched ${allSubTests.length} possible subtests for waterType ${widget.waterTypeID}',
-      );
-    } catch (e, st) {
-      debugPrint('fetchAllSubTests error: $e\n$st');
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         error = e.toString();
@@ -85,33 +76,24 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
     }
   }
 
-  // Fetch sample's own subtests
   Future<void> fetchSubTests() async {
     setState(() {
       isLoading = true;
       error = null;
     });
-
     try {
       final response = await Api.get.getSampleSubTestsList(
         widget.token,
         widget.sampleID,
       );
-
       if (!mounted) return;
-
       setState(() {
         subTests = response
             .where((st) => st.analysisTypeID == widget.filter)
             .toList();
         isLoading = false;
       });
-
-      debugPrint(
-        'Fetched ${subTests.length} subtests for sample ${widget.sampleID}',
-      );
-    } catch (e, st) {
-      debugPrint('fetchSubTests error: $e\n$st');
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         error = e.toString();
@@ -120,59 +102,48 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
     }
   }
 
-  // Combined reload
   Future<void> reloadAll() async {
     setState(() => isLoading = true);
     await fetchAllSubTests();
     await fetchSubTests();
   }
 
+  void deleteSubTest(int subTestID) {
+    setState(() {
+      subTests.removeWhere((s) => s.subTestID == subTestID);
+    });
+  }
+
+  /// ✅ Build analysis map for submit
+  Map<int, Map<int, String>> getAnalysisMap() {
+    final Map<int, Map<int, String>> result = {};
+
+    for (var s in subTests) {
+      final typeID = s.analysisTypeID;
+      final value = s.subTestValue ?? '';
+
+      // Skip empty values if you want only filled subtests
+      if (value.trim().isEmpty) continue;
+
+      if (!result.containsKey(typeID)) {
+        result[typeID!] = {};
+      }
+
+      result[typeID]![s.subTestID!] = value;
+    }
+
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("❌ Error: $error", style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-              onPressed: reloadAll,
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (subTests.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("No SubTests found"),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.refresh),
-              label: const Text('Reload'),
-              onPressed: reloadAll,
-            ),
-          ],
-        ),
-      );
-    }
+    if (isLoading) return const Center(child: CircularProgressIndicator());
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🔄 Reload button
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton.icon(
@@ -182,6 +153,23 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
             ),
           ),
           const SizedBox(height: 16),
+
+          if (error != null)
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "❌ Error: $error",
+                  style: const TextStyle(color: Colors.red),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                  onPressed: reloadAll,
+                ),
+              ],
+            ),
 
           Text(
             "All SubTests Details",
@@ -193,316 +181,202 @@ class _SampleDetailsDropdownState extends State<SampleDetailsDropdown> {
           ),
           const SizedBox(height: 12),
 
-          // 🧪 Subtest Cards
-          ...subTests.map((s) {
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    RichText(
-                      text: TextSpan(
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
-                          height: 1.5,
-                        ),
-                        children: [
-                          const TextSpan(text: "📊 Subtest: "),
-                          TextSpan(
-                            text: safeText(s.subTestName),
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(text: " (Symbol: "),
-                          TextSpan(
-                            text: safeText(s.subTestSymbol),
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(text: ").\nValue: "),
-                          TextSpan(
-                            text: safeText(s.subTestValue),
-                            style: const TextStyle(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(text: ", UnitID: "),
-                          TextSpan(
-                            text: s.unitID?.toString() ?? 'Not Available',
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(text: ", MethodUsedID: "),
-                          TextSpan(
-                            text: s.methodUsedID?.toString() ?? 'Not Available',
-                            style: const TextStyle(
-                              color: Colors.purple,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(text: ", Type: "),
-                          TextSpan(
-                            text:
-                                s.analysisTypeID?.toString() ?? 'Not Available',
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(text: ", Analysed At: "),
-                          TextSpan(
-                            text:
-                                s.analysedAt?.toIso8601String() ??
-                                'Not Available',
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(text: ", For Lab Tech: "),
-                          TextSpan(
-                            text: s.isLabSubTest == true ? 'Yes' : 'No',
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+          if (subTests.isEmpty) const Center(child: Text("No SubTests found")),
+          ...subTests.map((s) => buildSubTestCard(s)).toList(),
 
-                    const SizedBox(height: 12),
-
-                    // 🔽 SubTest Value Input
-                    TextFormField(
-                      initialValue: s.subTestValue,
-                      decoration: const InputDecoration(
-                        labelText: 'SubTest Value',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        // Handle value change
-                      },
-                    ),
-                    // 🔽 Select Unit
-                    const SizedBox(height: 8),
-
-                    DropdownButtonFormField(
-                      value: s.unitID, // default selected value
-                      decoration: const InputDecoration(
-                        labelText: 'Select Unit',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: units.map((u) {
-                        return DropdownMenuItem(
-                          value: u.unitID,
-                          child: Text(u.unitName ?? 'Unknown Unit'),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        // Handle unit change
-                      },
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // 🔽 Select Method Used
-                    DropdownButtonFormField(
-                      value: s.methodUsedID, // default selected value
-                      decoration: const InputDecoration(
-                        labelText: 'Select Method Used',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: methodsUsed.map((m) {
-                        return DropdownMenuItem(
-                          value: m.methodUsedID,
-                          child: Text(m.methodUsedName ?? 'Unknown Method'),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        // Handle method change
-                      },
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // 🔽 Is Lab SubTest Toggle
-                    Container(
-                      decoration: BoxDecoration(
-                        color: (s.isLabSubTest ?? false)
-                            ? const Color.fromARGB(
-                                255,
-                                240,
-                                243,
-                                240,
-                              ).withOpacity(0.1)
-                            : const Color.fromARGB(
-                                255,
-                                243,
-                                239,
-                                239,
-                              ).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: (s.isLabSubTest ?? false)
-                              ? Colors.green
-                              : Colors.red,
-                          width: 1.2,
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                (s.isLabSubTest ?? false)
-                                    ? Icons.science_rounded
-                                    : Icons.science_outlined,
-                                color: (s.isLabSubTest ?? false)
-                                    ? Colors.green
-                                    : Colors.red,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                (s.isLabSubTest ?? false)
-                                    ? "Lab SubTest (Enabled)"
-                                    : "Lab SubTest (Disabled)",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: (s.isLabSubTest ?? false)
-                                      ? Colors.green
-                                      : Colors.red,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // ✅ Modern toggle switch
-                          Switch(
-                            value: s.isLabSubTest ?? false,
-                            activeColor: Colors.white,
-                            activeTrackColor: Colors.green,
-                            inactiveThumbColor: Colors.white,
-                            inactiveTrackColor: Colors.redAccent.withOpacity(
-                              0.6,
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                s.isLabSubTest = value;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-                    // 🔽 Analysed At Date Picker
-                    GestureDetector(
-                      onTap: () async {
-                        // Step 1️⃣: Pick date
-                        final pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: s.analysedAt ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-
-                        if (pickedDate != null) {
-                          // Step 2️⃣: Pick time after date
-                          final pickedTime = await showTimePicker(
-                            context: context,
-                            initialTime: s.analysedAt != null
-                                ? TimeOfDay.fromDateTime(s.analysedAt!)
-                                : TimeOfDay.now(),
-                          );
-
-                          if (pickedTime != null) {
-                            setState(() {
-                              s.analysedAt = DateTime(
-                                pickedDate.year,
-                                pickedDate.month,
-                                pickedDate.day,
-                                pickedTime.hour,
-                                pickedTime.minute,
-                              );
-                            });
-                          }
-                        }
-                      },
-                      child: AbsorbPointer(
-                        child: TextFormField(
-                          controller: TextEditingController(
-                            text: s.analysedAt != null
-                                ? "${s.analysedAt!.day.toString().padLeft(2, '0')}-${s.analysedAt!.month.toString().padLeft(2, '0')}-${s.analysedAt!.year} "
-                                      "${s.analysedAt!.hour.toString().padLeft(2, '0')}:${s.analysedAt!.minute.toString().padLeft(2, '0')}"
-                                : '',
-                          ),
-                          decoration: InputDecoration(
-                            labelText: 'Analysed At',
-                            helperText: 'Tap to select date and time',
-                            prefixIcon: const Icon(
-                              Icons.calendar_today,
-                              color: Colors.blue,
-                            ),
-                            suffixIcon: const Icon(
-                              Icons.access_time,
-                              color: Colors.blueAccent,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            filled: true,
-                            fillColor: Colors.blue.withOpacity(0.05),
-                          ),
-                          readOnly: true,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-
-          // 🔽 Add New Subtest Dropdown
-          const SizedBox(height: 16),
-          DropdownButtonFormField(
-            decoration: const InputDecoration(
-              labelText: 'Add New SubTest',
-              border: OutlineInputBorder(),
-            ),
-            items: allSubTests.map((subTest) {
-              return DropdownMenuItem(
-                value: subTest.subTestID,
-                child: Text(subTest.subTestName ?? 'Unknown SubTest'),
-              );
-            }).toList(),
-            onChanged: (value) {
-              // Handle add subtest
-            },
-          ),
+          buildAddNewSubtestDropdown(),
         ],
       ),
+    );
+  }
+
+  Widget buildSubTestCard(SampleSubTests s) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+                children: [
+                  const TextSpan(text: "📊 Subtest: "),
+                  TextSpan(
+                    text: safeText(s.subTestName),
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const TextSpan(text: " (Symbol: "),
+                  TextSpan(
+                    text: safeText(s.subTestSymbol),
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const TextSpan(text: "). Value: "),
+                  TextSpan(
+                    text: safeText(s.subTestValue),
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            TextFormField(
+              initialValue: s.subTestValue,
+              decoration: const InputDecoration(
+                labelText: 'SubTest Value',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (v) => s.subTestValue = v,
+            ),
+            const SizedBox(height: 8),
+
+            DropdownButtonFormField(
+              value: s.unitID,
+              decoration: const InputDecoration(
+                labelText: 'Select Unit',
+                border: OutlineInputBorder(),
+              ),
+              items: units
+                  .map(
+                    (u) => DropdownMenuItem(
+                      value: u.unitID,
+                      child: Text(u.unitName ?? 'Unknown Unit'),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) => setState(() => s.unitID = v),
+            ),
+            const SizedBox(height: 8),
+
+            DropdownButtonFormField(
+              value: s.methodUsedID,
+              decoration: const InputDecoration(
+                labelText: 'Select Method Used',
+                border: OutlineInputBorder(),
+              ),
+              items: methodsUsed
+                  .map(
+                    (m) => DropdownMenuItem(
+                      value: m.methodUsedID,
+                      child: Text(m.methodUsedName ?? 'Unknown Method'),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) => setState(() => s.methodUsedID = v),
+            ),
+            const SizedBox(height: 8),
+
+            SwitchListTile(
+              title: Text(
+                s.isLabSubTest == true
+                    ? "Lab SubTest (Enabled)"
+                    : "Lab SubTest (Disabled)",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: s.isLabSubTest == true ? Colors.green : Colors.red,
+                ),
+              ),
+              value: s.isLabSubTest ?? false,
+              activeColor: Colors.green,
+              onChanged: (val) => setState(() => s.isLabSubTest = val),
+            ),
+
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => deleteSubTest(s.subTestID!),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildAddNewSubtestDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        DropdownButtonFormField<int>(
+          value: selectedNewSubTestID,
+          decoration: const InputDecoration(
+            labelText: 'Add New SubTest',
+            border: OutlineInputBorder(),
+          ),
+          items: allSubTests
+              .map(
+                (st) => DropdownMenuItem<int>(
+                  value: st.subTestID,
+                  child: Text(st.subTestName ?? 'Unknown SubTest'),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            if (value == null) return;
+
+            final selected = allSubTests.firstWhere(
+              (st) => st.subTestID == value,
+            );
+            final exists = subTests.any(
+              (s) => s.subTestID == selected.subTestID,
+            );
+            if (exists) {
+              ScaffoldMessenger.of(context).removeCurrentSnackBar();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '⚠️ SubTest "${selected.subTestName}" already exists',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+              return;
+            }
+
+            setState(() {
+              subTests.add(
+                SampleSubTests(
+                  subTestID: selected.subTestID,
+                  subTestName: selected.subTestName,
+                  subTestSymbol: selected.subTestSymbol,
+                  unitID: 14,
+                  methodUsedID: 14,
+                  subTestValue: '',
+                  analysisTypeID: widget.filter,
+                  analysedAt: DateTime.now(),
+                  isLabSubTest: false,
+                ),
+              );
+              selectedNewSubTestID = null;
+            });
+
+            ScaffoldMessenger.of(context).removeCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '✅ SubTest "${selected.subTestName}" added successfully!',
+                ),
+                backgroundColor: Colors.green,
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
